@@ -78,14 +78,3 @@ src/
 |-- ViewModels/
 `-- Views/
 ```
-
-## Notes For Development
-
-- The project targets `net10.0-windows10.0.19041.0`
-- The app uses WPF plus a Windows Forms tray icon
-- The main UI lives in `src/Views/MainWindow.xaml`
-- Runtime composition is done in `src/App.xaml.cs`
-
-## License
-
-This project is licensed under the MIT License. See `LICENSE`.
