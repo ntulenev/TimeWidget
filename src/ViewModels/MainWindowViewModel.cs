@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -20,6 +21,8 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     private readonly ILocationService _locationService;
     private readonly IWeatherService _weatherService;
     private readonly IWidgetSettingsStore _settingsStore;
+    private readonly ReadOnlyObservableCollection<CityClockItemViewModel> _leftCityTimes;
+    private readonly ReadOnlyObservableCollection<CityClockItemViewModel> _rightCityTimes;
     private readonly DispatcherTimer _clockTimer;
     private readonly DispatcherTimer _weatherTimer;
 
@@ -37,21 +40,32 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         IClockService clockService,
         ILocationService locationService,
         IWeatherService weatherService,
-        IWidgetSettingsStore settingsStore)
+        IWidgetSettingsStore settingsStore,
+        IClockCitiesSettingsProvider clockCitiesSettingsProvider)
     {
         ArgumentNullException.ThrowIfNull(clockService);
         ArgumentNullException.ThrowIfNull(locationService);
         ArgumentNullException.ThrowIfNull(weatherService);
         ArgumentNullException.ThrowIfNull(settingsStore);
+        ArgumentNullException.ThrowIfNull(clockCitiesSettingsProvider);
 
         _clockService = clockService;
         _locationService = locationService;
         _weatherService = weatherService;
         _settingsStore = settingsStore;
 
+        var clockCitiesSettings = clockCitiesSettingsProvider.Load();
+        _leftCityTimes = new ReadOnlyObservableCollection<CityClockItemViewModel>(
+            new ObservableCollection<CityClockItemViewModel>(
+                CreateCityClockItems(clockCitiesSettings.LeftCities)));
+        _rightCityTimes = new ReadOnlyObservableCollection<CityClockItemViewModel>(
+            new ObservableCollection<CityClockItemViewModel>(
+                CreateCityClockItems(clockCitiesSettings.RightCities)));
+
         ShowForEditingCommand = new RelayCommand(RequestShowForEditing);
         ReturnToWallpaperModeCommand = new RelayCommand(RequestReturnToWallpaperMode);
         CenterWidgetCommand = new RelayCommand(RequestCenterWidget);
+        CenterUpWidgetCommand = new RelayCommand(RequestCenterUpWidget);
 
         _clockTimer = new DispatcherTimer
         {
@@ -76,11 +90,15 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     public event EventHandler? CenterWidgetRequested;
 
+    public event EventHandler? CenterUpWidgetRequested;
+
     public ICommand ShowForEditingCommand { get; }
 
     public ICommand ReturnToWallpaperModeCommand { get; }
 
     public ICommand CenterWidgetCommand { get; }
+
+    public ICommand CenterUpWidgetCommand { get; }
 
     public bool IsWallpaperMode
     {
@@ -96,6 +114,16 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     public Visibility EditChromeVisibility =>
         IsWallpaperMode ? Visibility.Collapsed : Visibility.Visible;
+
+    public ReadOnlyObservableCollection<CityClockItemViewModel> LeftCityTimes => _leftCityTimes;
+
+    public ReadOnlyObservableCollection<CityClockItemViewModel> RightCityTimes => _rightCityTimes;
+
+    public Visibility LeftCityTimesVisibility =>
+        LeftCityTimes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility RightCityTimesVisibility =>
+        RightCityTimes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
     public string TimeText
     {
@@ -215,6 +243,11 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         CenterWidgetRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    private void RequestCenterUpWidget()
+    {
+        CenterUpWidgetRequested?.Invoke(this, EventArgs.Empty);
+    }
+
     private void UpdateTime()
     {
         var now = _clockService.Now;
@@ -225,6 +258,16 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         DateText = string.IsNullOrEmpty(dateText)
             ? string.Empty
             : char.ToUpper(dateText[0], DateCulture) + dateText[1..];
+
+        foreach (var cityTime in LeftCityTimes)
+        {
+            cityTime.Update(now, currentCulture, Use24HourClock);
+        }
+
+        foreach (var cityTime in RightCityTimes)
+        {
+            cityTime.Update(now, currentCulture, Use24HourClock);
+        }
     }
 
     private async Task<bool> RefreshWeatherAsync(CancellationToken cancellationToken)
@@ -269,5 +312,14 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         WeatherConditionText = string.Empty;
         WeatherLocationText = message;
         WeatherDetailsVisibility = Visibility.Collapsed;
+    }
+
+    private static IEnumerable<CityClockItemViewModel> CreateCityClockItems(
+        IEnumerable<CityClockSettings> cities)
+    {
+        foreach (var city in cities)
+        {
+            yield return new CityClockItemViewModel(city.Name, city.TimeZoneId);
+        }
     }
 }

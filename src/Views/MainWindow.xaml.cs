@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private const double HoverOpacity = 0.96;
 
     private readonly MainWindowViewModel _viewModel;
+    private readonly double _centerUpVerticalOffsetRatio;
 
     private IntPtr _windowHandle;
     private IntPtr _foregroundEventHook;
@@ -34,13 +35,17 @@ public partial class MainWindow : Window
     private int _wallpaperRestoreRequestId;
     private WindowNativeMethods.NativePoint _dragOffset;
 
-    public MainWindow(MainWindowViewModel viewModel)
+    public MainWindow(
+        MainWindowViewModel viewModel,
+        WidgetPositioningSettings widgetPositioningSettings)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
+        ArgumentNullException.ThrowIfNull(widgetPositioningSettings);
 
         InitializeComponent();
 
         _viewModel = viewModel;
+        _centerUpVerticalOffsetRatio = widgetPositioningSettings.CenterUpVerticalOffsetPercent / 100d;
         DataContext = viewModel;
 
         Topmost = false;
@@ -54,6 +59,7 @@ public partial class MainWindow : Window
         _viewModel.ShowForEditingRequested += ViewModel_ShowForEditingRequested;
         _viewModel.ReturnToWallpaperModeRequested += ViewModel_ReturnToWallpaperModeRequested;
         _viewModel.CenterWidgetRequested += ViewModel_CenterWidgetRequested;
+        _viewModel.CenterUpWidgetRequested += ViewModel_CenterUpWidgetRequested;
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -77,6 +83,7 @@ public partial class MainWindow : Window
         _viewModel.ShowForEditingRequested -= ViewModel_ShowForEditingRequested;
         _viewModel.ReturnToWallpaperModeRequested -= ViewModel_ReturnToWallpaperModeRequested;
         _viewModel.CenterWidgetRequested -= ViewModel_CenterWidgetRequested;
+        _viewModel.CenterUpWidgetRequested -= ViewModel_CenterUpWidgetRequested;
         _viewModel.Dispose();
     }
 
@@ -151,12 +158,37 @@ public partial class MainWindow : Window
         SaveWindowPosition();
     }
 
+    private void ViewModel_CenterUpWidgetRequested(object? sender, EventArgs e)
+    {
+        CenterUpOnCurrentScreen();
+        EnsureWidgetVisible();
+        SaveWindowPosition();
+    }
+
     private void CenterOnCurrentScreen()
+    {
+        CenterOnCurrentScreen(verticalOffsetRatio: 0);
+    }
+
+    private void CenterUpOnCurrentScreen()
+    {
+        CenterOnCurrentScreen(verticalOffsetRatio: _centerUpVerticalOffsetRatio);
+    }
+
+    private void CenterOnCurrentScreen(double verticalOffsetRatio)
     {
         var screen = GetCurrentScreen();
         var windowBounds = GetCurrentWindowBounds();
-        var left = screen.Bounds.Left + ((screen.Bounds.Width - (windowBounds.Right - windowBounds.Left)) / 2);
-        var top = screen.Bounds.Top + ((screen.Bounds.Height - (windowBounds.Bottom - windowBounds.Top)) / 2);
+        var windowWidth = windowBounds.Right - windowBounds.Left;
+        var windowHeight = windowBounds.Bottom - windowBounds.Top;
+        var left = screen.Bounds.Left + ((screen.Bounds.Width - windowWidth) / 2);
+        var centeredTop = screen.Bounds.Top + ((screen.Bounds.Height - windowHeight) / 2);
+        var top = centeredTop - (int)Math.Round(screen.Bounds.Height * verticalOffsetRatio);
+
+        var minTop = screen.Bounds.Top;
+        var maxTop = screen.Bounds.Bottom - windowHeight;
+        top = Math.Max(minTop, Math.Min(maxTop, top));
+
         MoveWindowToScreenPixels(left, top);
     }
 

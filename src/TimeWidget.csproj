@@ -9,6 +9,9 @@
     <ApplicationIcon>clock_icon-icons.com_54407.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="clock_icon-icons.com_54407.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

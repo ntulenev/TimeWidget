@@ -4,6 +4,7 @@ using System.Windows;
 
 using TimeWidget.Abstractions;
 using TimeWidget.Infrastructure;
+using TimeWidget.Models;
 using TimeWidget.ViewModels;
 using TimeWidget.Views;
 
@@ -21,7 +22,8 @@ public partial class App : System.Windows.Application
         base.OnStartup(e);
 
         _mainWindowViewModel = CreateMainWindowViewModel();
-        var mainWindow = new MainWindow(_mainWindowViewModel);
+        var widgetPositioningSettings = CreateWidgetPositioningSettings();
+        var mainWindow = new MainWindow(_mainWindowViewModel, widgetPositioningSettings);
         MainWindow = mainWindow;
         ConfigureTray(mainWindow, _mainWindowViewModel);
         mainWindow.Show();
@@ -44,12 +46,22 @@ public partial class App : System.Windows.Application
         ILocationService locationService = new WindowsLocationService();
         IWeatherService weatherService = new OpenMeteoWeatherService();
         IWidgetSettingsStore settingsStore = new JsonWidgetSettingsStore();
+        IClockCitiesSettingsProvider clockCitiesSettingsProvider = new JsonAppSettingsClockCitiesSettingsProvider();
 
         return new MainWindowViewModel(
             clockService,
             locationService,
             weatherService,
-            settingsStore);
+            settingsStore,
+            clockCitiesSettingsProvider);
+    }
+
+    private static WidgetPositioningSettings CreateWidgetPositioningSettings()
+    {
+        IWidgetPositioningSettingsProvider widgetPositioningSettingsProvider =
+            new JsonAppSettingsWidgetPositioningSettingsProvider();
+
+        return widgetPositioningSettingsProvider.Load();
     }
 
     private void ConfigureTray(MainWindow mainWindow, MainWindowViewModel viewModel)
@@ -65,12 +77,16 @@ public partial class App : System.Windows.Application
         var centerWidgetItem = new Forms.ToolStripMenuItem("Center widget");
         centerWidgetItem.Click += (_, _) => viewModel.CenterWidgetCommand.Execute(null);
 
+        var centerUpWidgetItem = new Forms.ToolStripMenuItem("Center-up widget");
+        centerUpWidgetItem.Click += (_, _) => viewModel.CenterUpWidgetCommand.Execute(null);
+
         var exitItem = new Forms.ToolStripMenuItem("Exit");
         exitItem.Click += (_, _) => mainWindow.Close();
 
         contextMenu.Items.Add(showForSetupItem);
         contextMenu.Items.Add(wallpaperModeItem);
         contextMenu.Items.Add(centerWidgetItem);
+        contextMenu.Items.Add(centerUpWidgetItem);
         contextMenu.Items.Add(new Forms.ToolStripSeparator());
         contextMenu.Items.Add(exitItem);
 
