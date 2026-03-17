@@ -10,6 +10,7 @@ using TimeWidget.Infrastructure.Interop;
 using TimeWidget.Models;
 using TimeWidget.ViewModels;
 
+using Forms = System.Windows.Forms;
 using WpfPoint = System.Windows.Point;
 
 namespace TimeWidget.Views;
@@ -145,16 +146,18 @@ public partial class MainWindow : Window
 
     private void ViewModel_CenterWidgetRequested(object? sender, EventArgs e)
     {
-        CenterOnPrimaryScreen();
+        CenterOnCurrentScreen();
         EnsureWidgetVisible();
         SaveWindowPosition();
     }
 
-    private void CenterOnPrimaryScreen()
+    private void CenterOnCurrentScreen()
     {
-        var left = (SystemParameters.PrimaryScreenWidth - ActualWidth) / 2;
-        var top = (SystemParameters.PrimaryScreenHeight - ActualHeight) / 2;
-        MoveWindowToDip(left, top);
+        var screen = GetCurrentScreen();
+        var windowBounds = GetCurrentWindowBounds();
+        var left = screen.Bounds.Left + ((screen.Bounds.Width - (windowBounds.Right - windowBounds.Left)) / 2);
+        var top = screen.Bounds.Top + ((screen.Bounds.Height - (windowBounds.Bottom - windowBounds.Top)) / 2);
+        MoveWindowToScreenPixels(left, top);
     }
 
     private void DragArea_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -416,7 +419,47 @@ public partial class MainWindow : Window
             }
         }
 
-        CenterOnPrimaryScreen();
+        CenterOnCurrentScreen();
+    }
+
+    private Forms.Screen GetCurrentScreen()
+    {
+        if (_windowHandle != IntPtr.Zero)
+        {
+            return Forms.Screen.FromHandle(_windowHandle);
+        }
+
+        var source = PresentationSource.FromVisual(this);
+        var topLeft = source?.CompositionTarget?.TransformToDevice.Transform(new WpfPoint(Left, Top))
+            ?? new WpfPoint(Left, Top);
+
+        return Forms.Screen.FromPoint(new System.Drawing.Point(
+            (int)Math.Round(topLeft.X),
+            (int)Math.Round(topLeft.Y)));
+    }
+
+    private WindowNativeMethods.NativeRect GetCurrentWindowBounds()
+    {
+        if (_windowHandle != IntPtr.Zero &&
+            WindowNativeMethods.TryGetWindowRectangle(_windowHandle, out var windowRect))
+        {
+            return windowRect;
+        }
+
+        var source = PresentationSource.FromVisual(this);
+        var topLeft = source?.CompositionTarget?.TransformToDevice.Transform(new WpfPoint(Left, Top))
+            ?? new WpfPoint(Left, Top);
+        var bottomRight = source?.CompositionTarget?.TransformToDevice.Transform(
+            new WpfPoint(Left + ActualWidth, Top + ActualHeight))
+            ?? new WpfPoint(Left + ActualWidth, Top + ActualHeight);
+
+        return new WindowNativeMethods.NativeRect
+        {
+            Left = (int)Math.Round(topLeft.X),
+            Top = (int)Math.Round(topLeft.Y),
+            Right = (int)Math.Round(bottomRight.X),
+            Bottom = (int)Math.Round(bottomRight.Y)
+        };
     }
 
     private static bool IsSavedPositionVisible(WindowNativeMethods.NativePoint savedPosition)
