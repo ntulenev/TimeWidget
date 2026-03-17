@@ -74,10 +74,7 @@ public partial class App : System.Windows.Application
         var wallpaperModeItem = new Forms.ToolStripMenuItem("Back to wallpaper");
         wallpaperModeItem.Click += (_, _) => viewModel.ReturnToWallpaperModeCommand.Execute(null);
 
-        var centerWidgetItem = new Forms.ToolStripMenuItem("Center widget");
-        centerWidgetItem.Click += (_, _) => viewModel.CenterWidgetCommand.Execute(null);
-
-        var centerUpWidgetItem = new Forms.ToolStripMenuItem("Center-up widget");
+        var centerUpWidgetItem = new Forms.ToolStripMenuItem("Center widget");
         centerUpWidgetItem.Click += (_, _) => viewModel.CenterUpWidgetCommand.Execute(null);
 
         var exitItem = new Forms.ToolStripMenuItem("Exit");
@@ -85,7 +82,6 @@ public partial class App : System.Windows.Application
 
         contextMenu.Items.Add(showForSetupItem);
         contextMenu.Items.Add(wallpaperModeItem);
-        contextMenu.Items.Add(centerWidgetItem);
         contextMenu.Items.Add(centerUpWidgetItem);
         contextMenu.Items.Add(new Forms.ToolStripSeparator());
         contextMenu.Items.Add(exitItem);

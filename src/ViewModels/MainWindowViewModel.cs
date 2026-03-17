@@ -64,7 +64,6 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
         ShowForEditingCommand = new RelayCommand(RequestShowForEditing);
         ReturnToWallpaperModeCommand = new RelayCommand(RequestReturnToWallpaperMode);
-        CenterWidgetCommand = new RelayCommand(RequestCenterWidget);
         CenterUpWidgetCommand = new RelayCommand(RequestCenterUpWidget);
 
         _clockTimer = new DispatcherTimer
@@ -88,15 +87,11 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     public event EventHandler? ReturnToWallpaperModeRequested;
 
-    public event EventHandler? CenterWidgetRequested;
-
     public event EventHandler? CenterUpWidgetRequested;
 
     public ICommand ShowForEditingCommand { get; }
 
     public ICommand ReturnToWallpaperModeCommand { get; }
-
-    public ICommand CenterWidgetCommand { get; }
 
     public ICommand CenterUpWidgetCommand { get; }
 
@@ -236,11 +231,6 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     {
         IsWallpaperMode = true;
         ReturnToWallpaperModeRequested?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void RequestCenterWidget()
-    {
-        CenterWidgetRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void RequestCenterUpWidget()

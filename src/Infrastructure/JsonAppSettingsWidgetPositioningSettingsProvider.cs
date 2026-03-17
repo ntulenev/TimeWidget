@@ -40,10 +40,13 @@ public sealed class JsonAppSettingsWidgetPositioningSettingsProvider : IWidgetPo
     {
         var percent = settings?.CenterUpVerticalOffsetPercent ?? 15;
         percent = Math.Clamp(percent, 0, 100);
+        var opacity = settings?.Opacity ?? 75;
+        opacity = Math.Clamp(opacity, 0, 100);
 
         return new WidgetPositioningSettings
         {
-            CenterUpVerticalOffsetPercent = percent
+            CenterUpVerticalOffsetPercent = percent,
+            Opacity = opacity
         };
     }
 

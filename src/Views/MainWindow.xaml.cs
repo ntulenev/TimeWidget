@@ -19,11 +19,12 @@ public partial class MainWindow : Window
 {
     private static readonly bool PreferDesktopHostedWallpaperMode = false;
 
-    private const double IdleOpacity = 0.9;
-    private const double HoverOpacity = 0.96;
+    private const double HoverOpacityDelta = 0.06;
 
     private readonly MainWindowViewModel _viewModel;
     private readonly double _centerUpVerticalOffsetRatio;
+    private readonly double _idleOpacity;
+    private readonly double _hoverOpacity;
 
     private IntPtr _windowHandle;
     private IntPtr _foregroundEventHook;
@@ -46,10 +47,12 @@ public partial class MainWindow : Window
 
         _viewModel = viewModel;
         _centerUpVerticalOffsetRatio = widgetPositioningSettings.CenterUpVerticalOffsetPercent / 100d;
+        _idleOpacity = widgetPositioningSettings.Opacity / 100d;
+        _hoverOpacity = Math.Min(_idleOpacity + HoverOpacityDelta, 1d);
         DataContext = viewModel;
 
         Topmost = false;
-        Opacity = IdleOpacity;
+        Opacity = _idleOpacity;
 
         SourceInitialized += MainWindow_SourceInitialized;
         Loaded += MainWindow_Loaded;
@@ -58,7 +61,6 @@ public partial class MainWindow : Window
 
         _viewModel.ShowForEditingRequested += ViewModel_ShowForEditingRequested;
         _viewModel.ReturnToWallpaperModeRequested += ViewModel_ReturnToWallpaperModeRequested;
-        _viewModel.CenterWidgetRequested += ViewModel_CenterWidgetRequested;
         _viewModel.CenterUpWidgetRequested += ViewModel_CenterUpWidgetRequested;
     }
 
@@ -82,7 +84,6 @@ public partial class MainWindow : Window
 
         _viewModel.ShowForEditingRequested -= ViewModel_ShowForEditingRequested;
         _viewModel.ReturnToWallpaperModeRequested -= ViewModel_ReturnToWallpaperModeRequested;
-        _viewModel.CenterWidgetRequested -= ViewModel_CenterWidgetRequested;
         _viewModel.CenterUpWidgetRequested -= ViewModel_CenterUpWidgetRequested;
         _viewModel.Dispose();
     }
@@ -151,23 +152,11 @@ public partial class MainWindow : Window
         SaveWindowPosition();
     }
 
-    private void ViewModel_CenterWidgetRequested(object? sender, EventArgs e)
-    {
-        CenterOnCurrentScreen();
-        EnsureWidgetVisible();
-        SaveWindowPosition();
-    }
-
     private void ViewModel_CenterUpWidgetRequested(object? sender, EventArgs e)
     {
         CenterUpOnCurrentScreen();
         EnsureWidgetVisible();
         SaveWindowPosition();
-    }
-
-    private void CenterOnCurrentScreen()
-    {
-        CenterOnCurrentScreen(verticalOffsetRatio: 0);
     }
 
     private void CenterUpOnCurrentScreen()
@@ -260,7 +249,7 @@ public partial class MainWindow : Window
     {
         if (!_viewModel.IsWallpaperMode)
         {
-            Opacity = HoverOpacity;
+            Opacity = _hoverOpacity;
         }
     }
 
@@ -268,7 +257,7 @@ public partial class MainWindow : Window
     {
         if (!_viewModel.IsWallpaperMode)
         {
-            Opacity = IdleOpacity;
+            Opacity = _idleOpacity;
         }
     }
 
@@ -398,7 +387,7 @@ public partial class MainWindow : Window
         }
 
         StopDragging();
-        Opacity = IdleOpacity;
+        Opacity = _idleOpacity;
         _wallpaperRestoreRequestId++;
 
         if (_viewModel.IsWallpaperMode)
@@ -451,7 +440,7 @@ public partial class MainWindow : Window
             }
         }
 
-        CenterOnCurrentScreen();
+        CenterUpOnCurrentScreen();
     }
 
     private Forms.Screen GetCurrentScreen()

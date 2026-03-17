@@ -40,7 +40,7 @@ When the app starts, it opens as a borderless transparent widget and also create
 
 - `Show for setup` brings the widget to the front so you can drag it
 - `Back to wallpaper` returns it to non-interactive wallpaper mode
-- `Center widget` places it in the middle of the primary display
+- `Center widget` places it in the center of the current display. You can adjust the vertical offset with `WidgetPositioning:CenterUpVerticalOffsetPercent` in `src/appsettings.json`
 - `Esc` exits setup mode and sends it back behind other windows
 
 The widget updates:
@@ -67,6 +67,21 @@ The widget stores its last position here:
 ```
 
 This file is written on a best-effort basis when the widget position changes or the app closes.
+
+## App Settings
+
+The widget reads startup settings from `src/appsettings.json`.
+
+```json
+{
+  "WidgetPositioning": {
+    "CenterUpVerticalOffsetPercent": 10,
+    "Opacity": 75
+  }
+}
+```
+
+`Opacity` is a percentage from `0` to `100`. The default is `75`.
 
 ## Project Structure
 
