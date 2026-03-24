@@ -74,6 +74,9 @@ public partial class App : System.Windows.Application
         var wallpaperModeItem = new Forms.ToolStripMenuItem("Back to wallpaper");
         wallpaperModeItem.Click += (_, _) => viewModel.ReturnToWallpaperModeCommand.Execute(null);
 
+        var refreshWeatherItem = new Forms.ToolStripMenuItem("Refresh weather");
+        refreshWeatherItem.Click += async (_, _) => await viewModel.RefreshWeatherNowAsync();
+
         var centerUpWidgetItem = new Forms.ToolStripMenuItem("Center widget");
         centerUpWidgetItem.Click += (_, _) => viewModel.CenterUpWidgetCommand.Execute(null);
 
@@ -82,6 +85,7 @@ public partial class App : System.Windows.Application
 
         contextMenu.Items.Add(showForSetupItem);
         contextMenu.Items.Add(wallpaperModeItem);
+        contextMenu.Items.Add(refreshWeatherItem);
         contextMenu.Items.Add(centerUpWidgetItem);
         contextMenu.Items.Add(new Forms.ToolStripSeparator());
         contextMenu.Items.Add(exitItem);

@@ -158,11 +158,8 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     public async Task InitializeAsync()
     {
-        _weatherCoordinates = await _locationService.TryGetCoordinatesAsync(CancellationToken.None);
-
-        if (_weatherCoordinates is null)
+        if (!await TryEnsureWeatherCoordinatesAsync(CancellationToken.None))
         {
-            SetWeatherStatus("Enable Windows location");
             return;
         }
 
@@ -179,14 +176,8 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     {
         _weatherTimer.Stop();
 
-        if (_weatherCoordinates is null)
+        if (!await TryEnsureWeatherCoordinatesAsync(CancellationToken.None))
         {
-            _weatherCoordinates = await _locationService.TryGetCoordinatesAsync(CancellationToken.None);
-        }
-
-        if (_weatherCoordinates is null)
-        {
-            SetWeatherStatus("Enable Windows location");
             return;
         }
 
@@ -197,6 +188,19 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
             await RefreshWeatherAsync(CancellationToken.None);
         }
 
+        _weatherTimer.Start();
+    }
+
+    public async Task RefreshWeatherNowAsync()
+    {
+        _weatherTimer.Stop();
+
+        if (!await TryEnsureWeatherCoordinatesAsync(CancellationToken.None))
+        {
+            return;
+        }
+
+        await RefreshWeatherAsync(CancellationToken.None);
         _weatherTimer.Start();
     }
 
@@ -286,6 +290,23 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         {
             _isRefreshingWeather = false;
         }
+    }
+
+    private async Task<bool> TryEnsureWeatherCoordinatesAsync(CancellationToken cancellationToken)
+    {
+        if (_weatherCoordinates is not null)
+        {
+            return true;
+        }
+
+        _weatherCoordinates = await _locationService.TryGetCoordinatesAsync(cancellationToken);
+        if (_weatherCoordinates is not null)
+        {
+            return true;
+        }
+
+        SetWeatherStatus("Enable Windows location");
+        return false;
     }
 
     private void ApplyWeather(WeatherInfo weather)
