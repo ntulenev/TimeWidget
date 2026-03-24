@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
+using Microsoft.Extensions.Options;
+
 using TimeWidget.Abstractions;
 using TimeWidget.Models;
 
@@ -41,20 +43,20 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         ILocationService locationService,
         IWeatherService weatherService,
         IWidgetSettingsStore settingsStore,
-        IClockCitiesSettingsProvider clockCitiesSettingsProvider)
+        IOptions<ClockCitiesSettings> clockCitiesOptions)
     {
         ArgumentNullException.ThrowIfNull(clockService);
         ArgumentNullException.ThrowIfNull(locationService);
         ArgumentNullException.ThrowIfNull(weatherService);
         ArgumentNullException.ThrowIfNull(settingsStore);
-        ArgumentNullException.ThrowIfNull(clockCitiesSettingsProvider);
+        ArgumentNullException.ThrowIfNull(clockCitiesOptions);
 
         _clockService = clockService;
         _locationService = locationService;
         _weatherService = weatherService;
         _settingsStore = settingsStore;
 
-        var clockCitiesSettings = clockCitiesSettingsProvider.Load();
+        var clockCitiesSettings = clockCitiesOptions.Value;
         _leftCityTimes = new ReadOnlyObservableCollection<CityClockItemViewModel>(
             new ObservableCollection<CityClockItemViewModel>(
                 CreateCityClockItems(clockCitiesSettings.LeftCities)));
@@ -218,11 +220,6 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     {
         _clockTimer.Stop();
         _weatherTimer.Stop();
-
-        if (_weatherService is IDisposable disposableWeatherService)
-        {
-            disposableWeatherService.Dispose();
-        }
     }
 
     private void RequestShowForEditing()

@@ -2,6 +2,6 @@ namespace TimeWidget.Models;
 
 public sealed class WidgetPositioningSettings
 {
-    public double CenterUpVerticalOffsetPercent { get; init; } = 15;
-    public double Opacity { get; init; } = 75;
+    public double CenterUpVerticalOffsetPercent { get; set; } = 15;
+    public double Opacity { get; set; } = 75;
 }

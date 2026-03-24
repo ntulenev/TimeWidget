@@ -4,6 +4,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
 
+using Microsoft.Extensions.Options;
 using Microsoft.Win32;
 
 using TimeWidget.Infrastructure.Interop;
@@ -38,13 +39,14 @@ public partial class MainWindow : Window
 
     public MainWindow(
         MainWindowViewModel viewModel,
-        WidgetPositioningSettings widgetPositioningSettings)
+        IOptions<WidgetPositioningSettings> widgetPositioningOptions)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
-        ArgumentNullException.ThrowIfNull(widgetPositioningSettings);
+        ArgumentNullException.ThrowIfNull(widgetPositioningOptions);
 
         InitializeComponent();
 
+        var widgetPositioningSettings = widgetPositioningOptions.Value;
         _viewModel = viewModel;
         _centerUpVerticalOffsetRatio = widgetPositioningSettings.CenterUpVerticalOffsetPercent / 100d;
         _idleOpacity = widgetPositioningSettings.Opacity / 100d;
@@ -85,7 +87,6 @@ public partial class MainWindow : Window
         _viewModel.ShowForEditingRequested -= ViewModel_ShowForEditingRequested;
         _viewModel.ReturnToWallpaperModeRequested -= ViewModel_ReturnToWallpaperModeRequested;
         _viewModel.CenterUpWidgetRequested -= ViewModel_CenterUpWidgetRequested;
-        _viewModel.Dispose();
     }
 
     private void MainWindow_SourceInitialized(object? sender, EventArgs e)

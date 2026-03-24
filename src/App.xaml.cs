@@ -2,9 +2,9 @@ using System.Drawing;
 using System.IO;
 using System.Windows;
 
-using TimeWidget.Abstractions;
-using TimeWidget.Infrastructure;
-using TimeWidget.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
 using TimeWidget.ViewModels;
 using TimeWidget.Views;
 
@@ -15,17 +15,21 @@ namespace TimeWidget;
 public partial class App : System.Windows.Application
 {
     private Forms.NotifyIcon? _notifyIcon;
-    private MainWindowViewModel? _mainWindowViewModel;
+    private ServiceProvider? _serviceProvider;
+    private IServiceScope? _mainWindowScope;
+    private IServiceScopeFactory? _scopeFactory;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        _mainWindowViewModel = CreateMainWindowViewModel();
-        var widgetPositioningSettings = CreateWidgetPositioningSettings();
-        var mainWindow = new MainWindow(_mainWindowViewModel, widgetPositioningSettings);
+        _serviceProvider = CreateServiceProvider();
+        _scopeFactory = _serviceProvider.GetRequiredService<IServiceScopeFactory>();
+
+        var mainWindow = CreateMainWindow();
+        var mainWindowViewModel = _mainWindowScope!.ServiceProvider.GetRequiredService<MainWindowViewModel>();
         MainWindow = mainWindow;
-        ConfigureTray(mainWindow, _mainWindowViewModel);
+        ConfigureTray(mainWindow, mainWindowViewModel);
         mainWindow.Show();
     }
 
@@ -37,31 +41,56 @@ public partial class App : System.Windows.Application
             _notifyIcon.Dispose();
         }
 
+        DisposeMainWindowScope();
+        _serviceProvider?.Dispose();
+
         base.OnExit(e);
     }
 
-    private static MainWindowViewModel CreateMainWindowViewModel()
+    private static ServiceProvider CreateServiceProvider()
     {
-        IClockService clockService = new SystemClockService();
-        ILocationService locationService = new WindowsLocationService();
-        IWeatherService weatherService = new OpenMeteoWeatherService();
-        IWidgetSettingsStore settingsStore = new JsonWidgetSettingsStore();
-        IClockCitiesSettingsProvider clockCitiesSettingsProvider = new JsonAppSettingsClockCitiesSettingsProvider();
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+            .Build();
 
-        return new MainWindowViewModel(
-            clockService,
-            locationService,
-            weatherService,
-            settingsStore,
-            clockCitiesSettingsProvider);
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddTimeWidgetInfrastructure(configuration);
+        services.AddTimeWidgetPresentation();
+
+        return services.BuildServiceProvider(new ServiceProviderOptions
+        {
+            ValidateOnBuild = true,
+            ValidateScopes = true
+        });
     }
 
-    private static WidgetPositioningSettings CreateWidgetPositioningSettings()
+    private MainWindow CreateMainWindow()
     {
-        IWidgetPositioningSettingsProvider widgetPositioningSettingsProvider =
-            new JsonAppSettingsWidgetPositioningSettingsProvider();
+        ArgumentNullException.ThrowIfNull(_scopeFactory);
 
-        return widgetPositioningSettingsProvider.Load();
+        _mainWindowScope = _scopeFactory.CreateScope();
+
+        var mainWindow = _mainWindowScope.ServiceProvider.GetRequiredService<MainWindow>();
+        mainWindow.Closed += MainWindow_Closed;
+        return mainWindow;
+    }
+
+    private void MainWindow_Closed(object? sender, EventArgs e)
+    {
+        if (sender is MainWindow mainWindow)
+        {
+            mainWindow.Closed -= MainWindow_Closed;
+        }
+
+        DisposeMainWindowScope();
+    }
+
+    private void DisposeMainWindowScope()
+    {
+        _mainWindowScope?.Dispose();
+        _mainWindowScope = null;
     }
 
     private void ConfigureTray(MainWindow mainWindow, MainWindowViewModel viewModel)
