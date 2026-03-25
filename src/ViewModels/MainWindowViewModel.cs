@@ -20,19 +20,25 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     private static readonly CultureInfo DateCulture = CultureInfo.GetCultureInfo("en-US");
 
     private readonly IClockService _clockService;
+    private readonly ICalendarService _calendarService;
     private readonly ILocationService _locationService;
     private readonly IWeatherService _weatherService;
     private readonly IWidgetSettingsStore _settingsStore;
     private readonly ReadOnlyObservableCollection<CityClockItemViewModel> _leftCityTimes;
     private readonly ReadOnlyObservableCollection<CityClockItemViewModel> _rightCityTimes;
+    private readonly ObservableCollection<CalendarEventItemViewModel> _calendarEventsSource;
+    private readonly ReadOnlyObservableCollection<CalendarEventItemViewModel> _calendarEvents;
     private readonly DispatcherTimer _clockTimer;
+    private readonly DispatcherTimer _calendarTimer;
     private readonly DispatcherTimer _weatherTimer;
 
     private Coordinates? _weatherCoordinates;
+    private bool _isRefreshingCalendar;
     private bool _isRefreshingWeather;
     private bool _isWallpaperMode = true;
     private string _timeText = string.Empty;
     private string _dateText = string.Empty;
+    private string _calendarStatusText = string.Empty;
     private string _weatherTemperatureText = string.Empty;
     private string _weatherConditionText = string.Empty;
     private string _weatherLocationText = "Locating...";
@@ -40,18 +46,23 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     public MainWindowViewModel(
         IClockService clockService,
+        ICalendarService calendarService,
         ILocationService locationService,
         IWeatherService weatherService,
         IWidgetSettingsStore settingsStore,
-        IOptions<ClockCitiesSettings> clockCitiesOptions)
+        IOptions<ClockCitiesSettings> clockCitiesOptions,
+        IOptions<GoogleCalendarSettings> googleCalendarOptions)
     {
         ArgumentNullException.ThrowIfNull(clockService);
+        ArgumentNullException.ThrowIfNull(calendarService);
         ArgumentNullException.ThrowIfNull(locationService);
         ArgumentNullException.ThrowIfNull(weatherService);
         ArgumentNullException.ThrowIfNull(settingsStore);
         ArgumentNullException.ThrowIfNull(clockCitiesOptions);
+        ArgumentNullException.ThrowIfNull(googleCalendarOptions);
 
         _clockService = clockService;
+        _calendarService = calendarService;
         _locationService = locationService;
         _weatherService = weatherService;
         _settingsStore = settingsStore;
@@ -63,6 +74,9 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         _rightCityTimes = new ReadOnlyObservableCollection<CityClockItemViewModel>(
             new ObservableCollection<CityClockItemViewModel>(
                 CreateCityClockItems(clockCitiesSettings.RightCities)));
+        _calendarEventsSource = [];
+        _calendarEvents = new ReadOnlyObservableCollection<CalendarEventItemViewModel>(
+            _calendarEventsSource);
 
         ShowForEditingCommand = new RelayCommand(RequestShowForEditing);
         ReturnToWallpaperModeCommand = new RelayCommand(RequestReturnToWallpaperMode);
@@ -73,12 +87,21 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
             Interval = ClockRefreshInterval
         };
 
+        var calendarRefreshInterval = TimeSpan.FromMinutes(googleCalendarOptions.Value.RefreshMinutes);
+        _calendarTimer = new DispatcherTimer
+        {
+            Interval = calendarRefreshInterval
+        };
+
         _weatherTimer = new DispatcherTimer
         {
             Interval = WeatherRefreshInterval
         };
 
         _clockTimer.Tick += (_, _) => UpdateTime();
+        _calendarTimer.Tick += async (_, _) => await RefreshCalendarAsync(
+            interactive: false,
+            CancellationToken.None);
         _weatherTimer.Tick += async (_, _) => await RefreshWeatherAsync(CancellationToken.None);
 
         UpdateTime();
@@ -122,6 +145,19 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     public Visibility RightCityTimesVisibility =>
         RightCityTimes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
+    public ReadOnlyObservableCollection<CalendarEventItemViewModel> CalendarEvents => _calendarEvents;
+
+    public Visibility CalendarSectionVisibility =>
+        CalendarEvents.Count > 0 || !string.IsNullOrWhiteSpace(CalendarStatusText)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public Visibility CalendarEventsVisibility =>
+        CalendarEvents.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility CalendarStatusVisibility =>
+        !string.IsNullOrWhiteSpace(CalendarStatusText) ? Visibility.Visible : Visibility.Collapsed;
+
     public string TimeText
     {
         get => _timeText;
@@ -132,6 +168,19 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     {
         get => _dateText;
         private set => SetProperty(ref _dateText, value);
+    }
+
+    public string CalendarStatusText
+    {
+        get => _calendarStatusText;
+        private set
+        {
+            if (SetProperty(ref _calendarStatusText, value))
+            {
+                OnPropertyChanged(nameof(CalendarStatusVisibility));
+                OnPropertyChanged(nameof(CalendarSectionVisibility));
+            }
+        }
     }
 
     public string WeatherTemperatureText
@@ -160,37 +209,47 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     public async Task InitializeAsync()
     {
-        if (!await TryEnsureWeatherCoordinatesAsync(CancellationToken.None))
+        if (await TryEnsureWeatherCoordinatesAsync(CancellationToken.None))
         {
-            return;
+            await RefreshWeatherAsync(CancellationToken.None);
+            _weatherTimer.Start();
         }
 
-        await RefreshWeatherAsync(CancellationToken.None);
-        _weatherTimer.Start();
+        await RefreshCalendarAsync(interactive: false, CancellationToken.None);
+        if (_calendarService.IsEnabled)
+        {
+            _calendarTimer.Start();
+        }
     }
 
     public void HandleSuspend()
     {
+        _calendarTimer.Stop();
         _weatherTimer.Stop();
     }
 
     public async Task HandleResumeAsync()
     {
+        _calendarTimer.Stop();
         _weatherTimer.Stop();
 
-        if (!await TryEnsureWeatherCoordinatesAsync(CancellationToken.None))
+        if (await TryEnsureWeatherCoordinatesAsync(CancellationToken.None))
         {
-            return;
+            var refreshed = await RefreshWeatherAsync(CancellationToken.None);
+            if (!refreshed)
+            {
+                await Task.Delay(WeatherResumeRetryDelay);
+                await RefreshWeatherAsync(CancellationToken.None);
+            }
+
+            _weatherTimer.Start();
         }
 
-        var refreshed = await RefreshWeatherAsync(CancellationToken.None);
-        if (!refreshed)
+        await RefreshCalendarAsync(interactive: false, CancellationToken.None);
+        if (_calendarService.IsEnabled)
         {
-            await Task.Delay(WeatherResumeRetryDelay);
-            await RefreshWeatherAsync(CancellationToken.None);
+            _calendarTimer.Start();
         }
-
-        _weatherTimer.Start();
     }
 
     public async Task RefreshWeatherNowAsync()
@@ -206,6 +265,32 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         _weatherTimer.Start();
     }
 
+    public async Task RefreshCalendarNowAsync()
+    {
+        _calendarTimer.Stop();
+        await RefreshCalendarAsync(interactive: true, CancellationToken.None);
+
+        if (_calendarService.IsEnabled)
+        {
+            _calendarTimer.Start();
+        }
+    }
+
+    public async Task ForgetCalendarAuthorizationAsync()
+    {
+        _calendarTimer.Stop();
+        await _calendarService.ForgetAuthorizationAsync(CancellationToken.None);
+        ApplyCalendarAgenda(new CalendarAgendaResult
+        {
+            StatusMessage = "Google Calendar sign-in removed"
+        });
+
+        if (_calendarService.IsEnabled)
+        {
+            _calendarTimer.Start();
+        }
+    }
+
     public void SaveScreenPosition(int left, int top)
     {
         _settingsStore.SaveWindowPlacement(new WidgetPlacementSettings(left, top, "px"));
@@ -219,6 +304,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _clockTimer.Stop();
+        _calendarTimer.Stop();
         _weatherTimer.Stop();
     }
 
@@ -289,6 +375,29 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    private async Task<bool> RefreshCalendarAsync(
+        bool interactive,
+        CancellationToken cancellationToken)
+    {
+        if (_isRefreshingCalendar)
+        {
+            return false;
+        }
+
+        _isRefreshingCalendar = true;
+
+        try
+        {
+            var agenda = await _calendarService.GetUpcomingEventsAsync(interactive, cancellationToken);
+            ApplyCalendarAgenda(agenda);
+            return true;
+        }
+        finally
+        {
+            _isRefreshingCalendar = false;
+        }
+    }
+
     private async Task<bool> TryEnsureWeatherCoordinatesAsync(CancellationToken cancellationToken)
     {
         if (_weatherCoordinates is not null)
@@ -320,6 +429,74 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         WeatherConditionText = string.Empty;
         WeatherLocationText = message;
         WeatherDetailsVisibility = Visibility.Collapsed;
+    }
+
+    private void ApplyCalendarAgenda(CalendarAgendaResult agenda)
+    {
+        _calendarEventsSource.Clear();
+        foreach (var calendarEvent in agenda.Events)
+        {
+            _calendarEventsSource.Add(CreateCalendarEventItem(calendarEvent));
+        }
+
+        CalendarStatusText = agenda.StatusMessage;
+        NotifyCalendarViewStateChanged();
+    }
+
+    private void NotifyCalendarViewStateChanged()
+    {
+        OnPropertyChanged(nameof(CalendarEventsVisibility));
+        OnPropertyChanged(nameof(CalendarSectionVisibility));
+    }
+
+    private static CalendarEventItemViewModel CreateCalendarEventItem(CalendarEventInfo calendarEvent)
+    {
+        var localStart = calendarEvent.Start.ToLocalTime();
+        var dayLabel = GetCalendarDayLabel(localStart.Date, DateTimeOffset.Now.Date);
+        var scheduleText = calendarEvent.IsAllDay
+            ? $"{dayLabel} - All day"
+            : $"{dayLabel} - {localStart:HH:mm}";
+        var responseSymbol = GetResponseSymbol(calendarEvent.SelfResponseStatus);
+
+        return new CalendarEventItemViewModel(
+            calendarEvent.Title,
+            scheduleText,
+            responseSymbol);
+    }
+
+    private static string GetResponseSymbol(string? selfResponseStatus)
+    {
+        if (string.Equals(selfResponseStatus, "accepted", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Empty;
+        }
+
+        if (string.Equals(selfResponseStatus, "tentative", StringComparison.OrdinalIgnoreCase))
+        {
+            return "M";
+        }
+
+        if (string.Equals(selfResponseStatus, "declined", StringComparison.OrdinalIgnoreCase))
+        {
+            return "N";
+        }
+
+        return "?";
+    }
+
+    private static string GetCalendarDayLabel(DateTime eventDate, DateTime currentDate)
+    {
+        if (eventDate == currentDate)
+        {
+            return "Today";
+        }
+
+        if (eventDate == currentDate.AddDays(1))
+        {
+            return "Tomorrow";
+        }
+
+        return eventDate.ToString("ddd, d MMM", DateCulture);
     }
 
     private static IEnumerable<CityClockItemViewModel> CreateCityClockItems(

@@ -38,7 +38,24 @@ public static class ServiceCollectionExtensions
             settings.ScalePercent = Math.Clamp(settings.ScalePercent, 50, 200);
         });
 
+        services.AddOptions<GoogleCalendarSettings>()
+            .Bind(configuration.GetSection("GoogleCalendar"));
+        services.PostConfigure<GoogleCalendarSettings>(settings =>
+        {
+            settings.CalendarId = string.IsNullOrWhiteSpace(settings.CalendarId)
+                ? "primary"
+                : settings.CalendarId.Trim();
+            settings.MaxEvents = Math.Clamp(settings.MaxEvents, 1, 8);
+            settings.RefreshMinutes = Math.Clamp(settings.RefreshMinutes, 1, 60);
+            settings.ClientSecretsPath = settings.ClientSecretsPath?.Trim() ?? string.Empty;
+            settings.TokenStoreDirectory = settings.TokenStoreDirectory?.Trim() ?? string.Empty;
+            settings.LoginHint = string.IsNullOrWhiteSpace(settings.LoginHint)
+                ? null
+                : settings.LoginHint.Trim();
+        });
+
         services.AddSingleton<IClockService, SystemClockService>();
+        services.AddSingleton<ICalendarService, GoogleCalendarService>();
         services.AddSingleton<ILocationService, WindowsLocationService>();
         services.AddSingleton<IWeatherService, OpenMeteoWeatherService>();
         services.AddSingleton<IWidgetSettingsStore, JsonWidgetSettingsStore>();

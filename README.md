@@ -10,6 +10,7 @@ TimeWidget is a lightweight Windows desktop widget built with WPF. It shows the 
 
 - Large clock and date display
 - Current weather for your location
+- Upcoming Google Calendar events
 - Wallpaper mode that stays behind normal windows
 - Setup mode for dragging and positioning the widget
 - System tray controls for setup, centering, and exit
@@ -77,11 +78,44 @@ The widget reads startup settings from `src/appsettings.json`.
   "WidgetPositioning": {
     "CenterUpVerticalOffsetPercent": 10,
     "Opacity": 75
+  },
+  "GoogleCalendar": {
+    "Enabled": true,
+    "CalendarId": "primary",
+    "MaxEvents": 4,
+    "RefreshMinutes": 5,
+    "ClientSecretsPath": "%LocalAppData%\\TimeWidget\\google-oauth-client.json",
+    "TokenStoreDirectory": "%LocalAppData%\\TimeWidget\\GoogleCalendarToken",
+    "LoginHint": "your.name@company.com",
+    "ForceAccountSelection": true
   }
 }
 ```
 
 `Opacity` is a percentage from `0` to `100`. The default is `75`.
+
+## Google Calendar Setup
+
+To show upcoming events, TimeWidget uses Google Calendar OAuth for a desktop app.
+
+1. Create a Google Cloud project.
+2. Enable `Google Calendar API`.
+3. Create an `OAuth client ID` of type `Desktop app`.
+4. Download the OAuth client JSON.
+5. Save it to:
+
+```text
+%LocalAppData%\TimeWidget\google-oauth-client.json
+```
+
+6. Optional: set `GoogleCalendar:LoginHint` in `src/appsettings.json` to your corporate email so Google suggests the right account.
+7. Run the widget and use the tray menu item `Refresh calendar` to connect the account.
+
+Notes:
+
+- `CalendarId` can stay as `primary` for the selected account's main calendar.
+- If your company uses Google Workspace, the admin might need to allow your OAuth app before Calendar access works.
+- `Forget Google Calendar sign-in` clears the local token and forces a fresh login the next time you refresh.
 
 ## Project Structure
 
