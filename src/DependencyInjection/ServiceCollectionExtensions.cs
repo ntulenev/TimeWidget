@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
                 0,
                 100);
             settings.Opacity = Math.Clamp(settings.Opacity, 0, 100);
+            settings.ScalePercent = Math.Clamp(settings.ScalePercent, 50, 200);
         });
 
         services.AddSingleton<IClockService, SystemClockService>();

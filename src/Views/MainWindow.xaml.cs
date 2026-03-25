@@ -19,6 +19,7 @@ namespace TimeWidget.Views;
 public partial class MainWindow : Window
 {
     private static readonly bool PreferDesktopHostedWallpaperMode = false;
+    private const double DefaultLayoutScale = 1.15;
 
     private const double HoverOpacityDelta = 0.06;
 
@@ -52,6 +53,7 @@ public partial class MainWindow : Window
         _idleOpacity = widgetPositioningSettings.Opacity / 100d;
         _hoverOpacity = Math.Min(_idleOpacity + HoverOpacityDelta, 1d);
         DataContext = viewModel;
+        ApplyConfiguredScale(widgetPositioningSettings.ScalePercent);
 
         Topmost = false;
         Opacity = _idleOpacity;
@@ -566,5 +568,12 @@ public partial class MainWindow : Window
         }
 
         WindowNativeMethods.MoveWindow(_windowHandle, left, top);
+    }
+
+    private void ApplyConfiguredScale(double scalePercent)
+    {
+        var layoutScale = DefaultLayoutScale * (scalePercent / 100d);
+        RootScaleTransform.ScaleX = layoutScale;
+        RootScaleTransform.ScaleY = layoutScale;
     }
 }

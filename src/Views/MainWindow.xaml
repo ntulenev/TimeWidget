@@ -41,7 +41,9 @@
           TextOptions.TextFormattingMode="Ideal"
           TextOptions.TextRenderingMode="Grayscale">
         <Grid.LayoutTransform>
-            <ScaleTransform ScaleX="1.15" ScaleY="1.15" />
+            <ScaleTransform x:Name="RootScaleTransform"
+                            ScaleX="1.15"
+                            ScaleY="1.15" />
         </Grid.LayoutTransform>
 
         <Rectangle Margin="12,10,12,10"
