@@ -160,14 +160,22 @@ public partial class MainWindow : Window
         SaveWindowPosition();
     }
 
-    private void CenterUpOnCurrentScreen()
+    public void CenterUpOnScreen(Forms.Screen screen)
     {
-        CenterOnCurrentScreen(verticalOffsetRatio: _centerUpVerticalOffsetRatio);
+        ArgumentNullException.ThrowIfNull(screen);
+
+        CenterOnScreen(screen, _centerUpVerticalOffsetRatio);
+        EnsureWidgetVisible();
+        SaveWindowPosition();
     }
 
-    private void CenterOnCurrentScreen(double verticalOffsetRatio)
+    private void CenterUpOnCurrentScreen()
     {
-        var screen = GetCurrentScreen();
+        CenterOnScreen(GetCurrentScreen(), _centerUpVerticalOffsetRatio);
+    }
+
+    private void CenterOnScreen(Forms.Screen screen, double verticalOffsetRatio)
+    {
         var windowBounds = GetCurrentWindowBounds();
         var windowWidth = windowBounds.Right - windowBounds.Left;
         var windowHeight = windowBounds.Bottom - windowBounds.Top;

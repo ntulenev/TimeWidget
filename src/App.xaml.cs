@@ -107,7 +107,16 @@ public partial class App : System.Windows.Application
         refreshWeatherItem.Click += async (_, _) => await viewModel.RefreshWeatherNowAsync();
 
         var centerUpWidgetItem = new Forms.ToolStripMenuItem("Center widget");
-        centerUpWidgetItem.Click += (_, _) => viewModel.CenterUpWidgetCommand.Execute(null);
+        centerUpWidgetItem.Click += (_, _) =>
+        {
+            if (GetOrderedScreens().Length <= 1)
+            {
+                viewModel.CenterUpWidgetCommand.Execute(null);
+            }
+        };
+        centerUpWidgetItem.DropDownOpening += (_, _) =>
+            ConfigureCenterWidgetMenu(centerUpWidgetItem, mainWindow);
+        ConfigureCenterWidgetMenu(centerUpWidgetItem, mainWindow);
 
         var exitItem = new Forms.ToolStripMenuItem("Exit");
         exitItem.Click += (_, _) => mainWindow.Close();
@@ -133,5 +142,48 @@ public partial class App : System.Windows.Application
         };
 
         _notifyIcon.DoubleClick += (_, _) => viewModel.ShowForEditingCommand.Execute(null);
+    }
+
+    private static void ConfigureCenterWidgetMenu(
+        Forms.ToolStripMenuItem centerUpWidgetItem,
+        MainWindow mainWindow)
+    {
+        centerUpWidgetItem.DropDownItems.Clear();
+
+        var screens = GetOrderedScreens();
+        if (screens.Length <= 1)
+        {
+            centerUpWidgetItem.Text = "Center widget";
+            centerUpWidgetItem.Enabled = true;
+            return;
+        }
+
+        centerUpWidgetItem.Text = "Center on monitor";
+
+        foreach (var screen in screens)
+        {
+            var screenIndex = GetDisplayIndex(screen);
+            var itemText = screenIndex > 0
+                ? $"Monitor {screenIndex}"
+                : screen.DeviceName;
+
+            var screenItem = new Forms.ToolStripMenuItem(itemText);
+            screenItem.Click += (_, _) => mainWindow.CenterUpOnScreen(screen);
+            centerUpWidgetItem.DropDownItems.Add(screenItem);
+        }
+    }
+
+    private static Forms.Screen[] GetOrderedScreens()
+    {
+        return Forms.Screen.AllScreens
+            .OrderBy(screen => GetDisplayIndex(screen) is var index && index > 0 ? index : int.MaxValue)
+            .ThenBy(screen => screen.DeviceName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static int GetDisplayIndex(Forms.Screen screen)
+    {
+        var digits = new string(screen.DeviceName.Where(char.IsDigit).ToArray());
+        return int.TryParse(digits, out var index) ? index : -1;
     }
 }
