@@ -45,7 +45,12 @@ public static class ServiceCollectionExtensions
             settings.CalendarId = string.IsNullOrWhiteSpace(settings.CalendarId)
                 ? "primary"
                 : settings.CalendarId.Trim();
-            settings.MaxEvents = Math.Clamp(settings.MaxEvents, 1, 8);
+            if (!Enum.IsDefined(settings.Mode))
+            {
+                settings.Mode = GoogleCalendarMode.Compact;
+            }
+            settings.MaxEventsCompact = Math.Clamp(settings.MaxEventsCompact, 1, 8);
+            settings.MaxEventsFull = Math.Clamp(settings.MaxEventsFull, 1, 20);
             settings.RefreshMinutes = Math.Clamp(settings.RefreshMinutes, 1, 60);
             settings.ClientSecretsPath = settings.ClientSecretsPath?.Trim() ?? string.Empty;
             settings.TokenStoreDirectory = settings.TokenStoreDirectory?.Trim() ?? string.Empty;

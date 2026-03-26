@@ -75,10 +75,11 @@ public sealed class GoogleCalendarService : ICalendarService
                 ApplicationName = "TimeWidget"
             });
 
+            var maxEvents = _settings.ActiveMaxEvents;
             var request = service.Events.List(_settings.CalendarId);
             request.MaxResults = Math.Min(
                 50,
-                Math.Max(MinCandidateEventsToFetch, _settings.MaxEvents * 8));
+                Math.Max(MinCandidateEventsToFetch, maxEvents * 8));
             request.EventTypes = EventsResource.ListRequest.EventTypesEnum.Default__;
             request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
             request.ShowDeleted = false;
@@ -92,7 +93,7 @@ public sealed class GoogleCalendarService : ICalendarService
                 .Select(MapEvent)
                 .Where(item => item is not null)
                 .Cast<CalendarEventInfo>()
-                .Take(_settings.MaxEvents)
+                .Take(maxEvents)
                 .ToArray()
                 ?? [];
 

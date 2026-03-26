@@ -24,6 +24,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     private readonly ILocationService _locationService;
     private readonly IWeatherService _weatherService;
     private readonly IWidgetSettingsStore _settingsStore;
+    private readonly bool _isFullCalendarMode;
     private readonly ReadOnlyObservableCollection<CityClockItemViewModel> _leftCityTimes;
     private readonly ReadOnlyObservableCollection<CityClockItemViewModel> _rightCityTimes;
     private readonly ObservableCollection<CalendarEventItemViewModel> _calendarEventsSource;
@@ -66,6 +67,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         _locationService = locationService;
         _weatherService = weatherService;
         _settingsStore = settingsStore;
+        _isFullCalendarMode = googleCalendarOptions.Value.IsFullCalendarMode;
 
         var clockCitiesSettings = clockCitiesOptions.Value;
         _leftCityTimes = new ReadOnlyObservableCollection<CityClockItemViewModel>(
@@ -147,6 +149,16 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
     public ReadOnlyObservableCollection<CalendarEventItemViewModel> CalendarEvents => _calendarEvents;
 
+    public Visibility CompactCalendarSectionVisibility =>
+        !_isFullCalendarMode && CalendarSectionVisibility == Visibility.Visible
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
+    public Visibility FullCalendarSectionVisibility =>
+        _isFullCalendarMode && CalendarSectionVisibility == Visibility.Visible
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+
     public Visibility CalendarSectionVisibility =>
         CalendarEvents.Count > 0 || !string.IsNullOrWhiteSpace(CalendarStatusText)
             ? Visibility.Visible
@@ -179,6 +191,8 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
             {
                 OnPropertyChanged(nameof(CalendarStatusVisibility));
                 OnPropertyChanged(nameof(CalendarSectionVisibility));
+                OnPropertyChanged(nameof(CompactCalendarSectionVisibility));
+                OnPropertyChanged(nameof(FullCalendarSectionVisibility));
             }
         }
     }
@@ -447,6 +461,8 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(CalendarEventsVisibility));
         OnPropertyChanged(nameof(CalendarSectionVisibility));
+        OnPropertyChanged(nameof(CompactCalendarSectionVisibility));
+        OnPropertyChanged(nameof(FullCalendarSectionVisibility));
     }
 
     private static CalendarEventItemViewModel CreateCalendarEventItem(CalendarEventInfo calendarEvent)
