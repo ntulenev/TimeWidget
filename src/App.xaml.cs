@@ -112,6 +112,10 @@ public partial class App : System.Windows.Application
         var forgetCalendarItem = new Forms.ToolStripMenuItem("Forget Google Calendar sign-in");
         forgetCalendarItem.Click += async (_, _) => await viewModel.ForgetCalendarAuthorizationAsync();
 
+        var calendarItem = new Forms.ToolStripMenuItem("Calendar");
+        calendarItem.DropDownItems.Add(refreshCalendarItem);
+        calendarItem.DropDownItems.Add(forgetCalendarItem);
+
         var centerUpWidgetItem = new Forms.ToolStripMenuItem("Center widget");
         centerUpWidgetItem.Click += (_, _) =>
         {
@@ -130,8 +134,7 @@ public partial class App : System.Windows.Application
         contextMenu.Items.Add(showForSetupItem);
         contextMenu.Items.Add(wallpaperModeItem);
         contextMenu.Items.Add(refreshWeatherItem);
-        contextMenu.Items.Add(refreshCalendarItem);
-        contextMenu.Items.Add(forgetCalendarItem);
+        contextMenu.Items.Add(calendarItem);
         contextMenu.Items.Add(centerUpWidgetItem);
         contextMenu.Items.Add(new Forms.ToolStripSeparator());
         contextMenu.Items.Add(exitItem);
