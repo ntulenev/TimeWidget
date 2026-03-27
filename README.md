@@ -29,11 +29,11 @@ TimeWidget is a lightweight Windows desktop widget built with WPF. It shows the 
 From the repository root:
 
 ```powershell
-dotnet restore .\src\TimeWidget.csproj
-dotnet run --project .\src\TimeWidget.csproj
+dotnet restore .\src\TimeWidget\TimeWidget.csproj
+dotnet run --project .\src\TimeWidget\TimeWidget.csproj
 ```
 
-You can also open `src/TimeWidget.csproj` in Visual Studio and run it as a normal desktop application.
+You can also open `src/TimeWidget/TimeWidget.csproj` in Visual Studio and run it as a normal desktop application.
 
 ## How It Works
 
@@ -41,7 +41,7 @@ When the app starts, it opens as a borderless transparent widget and also create
 
 - `Show for setup` brings the widget to the front so you can drag it
 - `Back to wallpaper` returns it to non-interactive wallpaper mode
-- `Center widget` places it in the center of the current display. You can adjust the vertical offset with `WidgetPositioning:CenterUpVerticalOffsetPercent` in `src/appsettings.json`
+- `Center widget` places it in the center of the current display. You can adjust the vertical offset with `WidgetPositioning:CenterUpVerticalOffsetPercent` in `src/TimeWidget/appsettings.json`
 - `Esc` exits setup mode and sends it back behind other windows
 
 The widget updates:
@@ -57,7 +57,7 @@ TimeWidget asks Windows for your current location and then loads weather data fr
 - If location access is blocked, the widget shows `Enable Windows location`
 - If the weather request fails, the widget shows `Weather unavailable`
 
-Fallback coordinates are currently disabled by default. If you want the widget to use a fixed location when Windows location is unavailable, edit the constants in `src/Infrastructure/WindowsLocationService.cs`.
+Fallback coordinates are currently disabled by default. If you want the widget to use a fixed location when Windows location is unavailable, edit the constants in `src/TimeWidget.Infrastructure/Location/WindowsLocationService.cs`.
 
 ## Saved Settings
 
@@ -71,7 +71,7 @@ This file is written on a best-effort basis when the widget position changes or 
 
 ## App Settings
 
-The widget reads startup settings from `src/appsettings.json`.
+The widget reads startup settings from `src/TimeWidget/appsettings.json`.
 
 ```json
 {
@@ -108,7 +108,7 @@ To show upcoming events, TimeWidget uses Google Calendar OAuth for a desktop app
 %LocalAppData%\TimeWidget\google-oauth-client.json
 ```
 
-6. Optional: set `GoogleCalendar:LoginHint` in `src/appsettings.json` to your corporate email so Google suggests the right account.
+6. Optional: set `GoogleCalendar:LoginHint` in `src/TimeWidget/appsettings.json` to your corporate email so Google suggests the right account.
 7. Run the widget and use the tray menu item `Refresh calendar` to connect the account.
 
 Notes:
@@ -121,9 +121,8 @@ Notes:
 
 ```text
 src/
-|-- Abstractions/
-|-- Infrastructure/
-|-- Models/
-|-- ViewModels/
-`-- Views/
+|-- TimeWidget/
+|-- TimeWidget.Application/
+|-- TimeWidget.Domain/
+`-- TimeWidget.Infrastructure/
 ```

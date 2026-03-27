@@ -1,0 +1,394 @@
+<Window x:Class="TimeWidget.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Time Widget"
+        Width="780"
+        Height="440"
+        AllowsTransparency="True"
+        Background="Transparent"
+        KeyDown="Window_KeyDown"
+        MouseEnter="Window_MouseEnter"
+        MouseLeave="Window_MouseLeave"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        SizeToContent="WidthAndHeight"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
+        WindowStartupLocation="Manual"
+        WindowStyle="None">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <FontFamily x:Key="ClockFont">Segoe UI Variable Display, Segoe UI Semibold, Segoe UI</FontFamily>
+        <DropShadowEffect x:Key="ReadableTextShadow"
+                          BlurRadius="26"
+                          Color="#E6000000"
+                          Opacity="0.98"
+                          ShadowDepth="0" />
+        <DropShadowEffect x:Key="TimeTextShadow"
+                          BlurRadius="36"
+                          Color="#F2000000"
+                          Opacity="1"
+                          ShadowDepth="0" />
+        <Style TargetType="TextBlock">
+            <Setter Property="Effect" Value="{StaticResource ReadableTextShadow}" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="Transparent"
+          MouseLeftButtonDown="DragArea_MouseLeftButtonDown"
+          MouseLeftButtonUp="DragArea_MouseLeftButtonUp"
+          MouseMove="DragArea_MouseMove"
+          TextOptions.TextFormattingMode="Ideal"
+          TextOptions.TextRenderingMode="Grayscale">
+        <Grid.LayoutTransform>
+            <ScaleTransform x:Name="RootScaleTransform"
+                            ScaleX="1.15"
+                            ScaleY="1.15" />
+        </Grid.LayoutTransform>
+
+        <Rectangle Margin="12,10,12,10"
+                   RadiusX="28"
+                   RadiusY="28"
+                   Fill="#12081218"
+                   IsHitTestVisible="False"
+                   Stroke="#B0FFFFFF"
+                   StrokeDashArray="7 5"
+                   StrokeThickness="1.5"
+                   Visibility="{Binding EditChromeVisible, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+        <Border Margin="0,12,0,0"
+                Padding="12,5"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Background="#B81A2230"
+                BorderBrush="#66FFFFFF"
+                BorderThickness="1"
+                CornerRadius="999"
+                IsHitTestVisible="False"
+                Visibility="{Binding EditChromeVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <TextBlock FontFamily="{StaticResource ClockFont}"
+                       FontSize="14"
+                       FontStretch="Normal"
+                       FontWeight="Bold"
+                       Foreground="#F6FFFFFF"
+                       Text="Setup mode - drag to move" />
+        </Border>
+
+        <Grid Margin="32,34,32,34"
+              HorizontalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="24" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="18" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           HorizontalAlignment="Center"
+                           Effect="{StaticResource TimeTextShadow}"
+                           FontFamily="{StaticResource ClockFont}"
+                           FontSize="150"
+                           FontStretch="Normal"
+                           FontWeight="ExtraBold"
+                           Foreground="White"
+                           Text="{Binding TimeText}"
+                           TextAlignment="Center" />
+
+                <TextBlock Grid.Row="1"
+                           Margin="0,-12,0,0"
+                           HorizontalAlignment="Center"
+                           FontFamily="{StaticResource ClockFont}"
+                           FontSize="35"
+                           FontStretch="Normal"
+                           FontWeight="SemiBold"
+                           Foreground="#E6FFFFFF"
+                           Text="{Binding DateText}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap" />
+
+                <Grid Grid.Row="3"
+                      Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="36" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <ItemsControl Grid.Column="0"
+                                  HorizontalAlignment="Right"
+                                  ItemsSource="{Binding LeftCityTimes}"
+                                  Visibility="{Binding HasLeftCityTimes, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,8,0,8"
+                                            HorizontalAlignment="Right"
+                                            Orientation="Vertical">
+                                    <TextBlock HorizontalAlignment="Right"
+                                               FontFamily="{StaticResource ClockFont}"
+                                               FontSize="18"
+                                               FontStretch="Normal"
+                                               FontWeight="SemiBold"
+                                               Foreground="#D8FFFFFF"
+                                               Text="{Binding Name}"
+                                               TextAlignment="Right" />
+                                    <TextBlock Margin="0,-2,0,0"
+                                               HorizontalAlignment="Right"
+                                               FontFamily="{StaticResource ClockFont}"
+                                               FontSize="34"
+                                               FontStretch="Normal"
+                                               FontWeight="Bold"
+                                               Foreground="#F6FFFFFF"
+                                               Text="{Binding TimeText}"
+                                               TextAlignment="Right" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel Grid.Column="2"
+                                HorizontalAlignment="Center"
+                                Orientation="Vertical"
+                                Visibility="{Binding HasWeatherDetails, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock HorizontalAlignment="Center"
+                                   FontFamily="{StaticResource ClockFont}"
+                                   FontSize="56"
+                                   FontStretch="Normal"
+                                   FontWeight="Bold"
+                                   Foreground="#FAFFFFFF"
+                                   Text="{Binding WeatherTemperatureText}"
+                                   TextAlignment="Center" />
+
+                        <TextBlock Margin="0,-8,0,0"
+                                   HorizontalAlignment="Center"
+                                   FontFamily="{StaticResource ClockFont}"
+                                   FontSize="24"
+                                   FontStretch="Normal"
+                                   FontWeight="SemiBold"
+                                   Foreground="#F0FFFFFF"
+                                   Text="{Binding WeatherConditionText}"
+                                   TextAlignment="Center" />
+
+                        <TextBlock Margin="0,8,0,0"
+                                   MaxWidth="320"
+                                   HorizontalAlignment="Center"
+                                   FontFamily="{StaticResource ClockFont}"
+                                   FontSize="30"
+                                   FontStretch="Normal"
+                                   FontWeight="SemiBold"
+                                   Foreground="#E2FFFFFF"
+                                   Text="{Binding WeatherLocationText}"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <ItemsControl Grid.Column="4"
+                                  HorizontalAlignment="Left"
+                                  ItemsSource="{Binding RightCityTimes}"
+                                  Visibility="{Binding HasRightCityTimes, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,8,0,8"
+                                            HorizontalAlignment="Left"
+                                            Orientation="Vertical">
+                                    <TextBlock HorizontalAlignment="Left"
+                                               FontFamily="{StaticResource ClockFont}"
+                                               FontSize="18"
+                                               FontStretch="Normal"
+                                               FontWeight="SemiBold"
+                                               Foreground="#D8FFFFFF"
+                                               Text="{Binding Name}"
+                                               TextAlignment="Left" />
+                                    <TextBlock Margin="0,-2,0,0"
+                                               HorizontalAlignment="Left"
+                                               FontFamily="{StaticResource ClockFont}"
+                                               FontSize="34"
+                                               FontStretch="Normal"
+                                               FontWeight="Bold"
+                                               Foreground="#F6FFFFFF"
+                                               Text="{Binding TimeText}"
+                                               TextAlignment="Left" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+
+                <Border Grid.Row="5"
+                        Padding="18,14"
+                        Background="#18101A26"
+                        BorderBrush="#52FFFFFF"
+                        BorderThickness="1"
+                        CornerRadius="22"
+                        Visibility="{Binding ShowCompactCalendarSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock FontFamily="{StaticResource ClockFont}"
+                                   FontSize="18"
+                                   FontStretch="Normal"
+                                   FontWeight="Bold"
+                                   Foreground="#EEFFFFFF"
+                                   Text="Next up" />
+
+                        <ItemsControl Grid.Row="1"
+                                      Margin="0,10,0,0"
+                                      ItemsSource="{Binding CalendarEvents}"
+                                      Visibility="{Binding ShowCalendarEvents, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,6,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="130" />
+                                            <ColumnDefinition Width="16" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   FontFamily="{StaticResource ClockFont}"
+                                                   FontSize="16"
+                                                   FontStretch="Normal"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#D8FFFFFF"
+                                                   Text="{Binding ScheduleText}" />
+
+                                        <StackPanel Grid.Column="2"
+                                                    Orientation="Horizontal">
+                                            <TextBlock Width="22"
+                                                       Margin="0,0,8,0"
+                                                       FontFamily="{StaticResource ClockFont}"
+                                                       FontSize="18"
+                                                       FontStretch="Normal"
+                                                       FontWeight="Bold"
+                                                       Foreground="#F6FFFFFF"
+                                                       Text="{Binding ResponseSymbol}"
+                                                       TextAlignment="Center" />
+
+                                            <TextBlock FontFamily="{StaticResource ClockFont}"
+                                                       FontSize="18"
+                                                       FontStretch="Normal"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#F6FFFFFF"
+                                                       Text="{Binding Title}"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Grid.Row="1"
+                                   Margin="0,10,0,0"
+                                   FontFamily="{StaticResource ClockFont}"
+                                   FontSize="18"
+                                   FontStretch="Normal"
+                                   FontWeight="SemiBold"
+                                   Foreground="#E2FFFFFF"
+                                   Text="{Binding CalendarStatusText}"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding ShowCalendarStatus, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <Border Grid.Column="1"
+                    Margin="28,6,0,0"
+                    MinWidth="360"
+                    MaxWidth="420"
+                    Padding="20,0,0,0"
+                    VerticalAlignment="Stretch"
+                    BorderBrush="#52FFFFFF"
+                    BorderThickness="1,0,0,0"
+                    Visibility="{Binding ShowFullCalendarSection, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Margin="20,18,0,0"
+                               FontFamily="{StaticResource ClockFont}"
+                               FontSize="22"
+                               FontStretch="Normal"
+                               FontWeight="Bold"
+                               Foreground="#EEFFFFFF"
+                               Text="Next up" />
+
+                    <ItemsControl Grid.Row="1"
+                                  Margin="20,12,0,0"
+                                  ItemsSource="{Binding CalendarEvents}"
+                                  Visibility="{Binding ShowCalendarEvents, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,10"
+                                        Padding="0,0,0,10"
+                                        BorderBrush="#24FFFFFF"
+                                        BorderThickness="0,0,0,1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="114" />
+                                            <ColumnDefinition Width="20" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0"
+                                                   FontFamily="{StaticResource ClockFont}"
+                                                   FontSize="15"
+                                                   FontStretch="Normal"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#D8FFFFFF"
+                                                   Text="{Binding ScheduleText}"
+                                                   TextWrapping="Wrap" />
+
+                                        <TextBlock Grid.Column="1"
+                                                   Margin="0,0,8,0"
+                                                   FontFamily="{StaticResource ClockFont}"
+                                                   FontSize="17"
+                                                   FontStretch="Normal"
+                                                   FontWeight="Bold"
+                                                   Foreground="#F6FFFFFF"
+                                                   Text="{Binding ResponseSymbol}"
+                                                   TextAlignment="Center" />
+
+                                        <TextBlock Grid.Column="2"
+                                                   FontFamily="{StaticResource ClockFont}"
+                                                   FontSize="18"
+                                                   FontStretch="Normal"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#F6FFFFFF"
+                                                   Text="{Binding Title}"
+                                                   TextWrapping="Wrap" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Grid.Row="1"
+                               Margin="20,12,0,0"
+                               FontFamily="{StaticResource ClockFont}"
+                               FontSize="18"
+                               FontStretch="Normal"
+                               FontWeight="SemiBold"
+                               Foreground="#E2FFFFFF"
+                               Text="{Binding CalendarStatusText}"
+                               TextWrapping="Wrap"
+                               Visibility="{Binding ShowCalendarStatus, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
