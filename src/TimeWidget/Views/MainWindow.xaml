@@ -33,6 +33,11 @@
         <Style TargetType="TextBlock">
             <Setter Property="Effect" Value="{StaticResource ReadableTextShadow}" />
         </Style>
+        <Style x:Key="ClockNumericTextStyle"
+               BasedOn="{StaticResource {x:Type TextBlock}}"
+               TargetType="TextBlock">
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+        </Style>
     </Window.Resources>
 
     <Grid Background="Transparent"
@@ -92,16 +97,32 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0"
-                           HorizontalAlignment="Center"
-                           Effect="{StaticResource TimeTextShadow}"
-                           FontFamily="{StaticResource ClockFont}"
-                           FontSize="150"
-                           FontStretch="Normal"
-                           FontWeight="ExtraBold"
-                           Foreground="White"
-                           Text="{Binding TimeText}"
-                           TextAlignment="Center" />
+                <Grid Grid.Row="0"
+                      HorizontalAlignment="Center">
+                    <TextBlock Style="{StaticResource ClockNumericTextStyle}"
+                               HorizontalAlignment="Center"
+                               Effect="{StaticResource TimeTextShadow}"
+                               FontFamily="{StaticResource ClockFont}"
+                               FontSize="150"
+                               FontStretch="Normal"
+                               FontWeight="ExtraBold"
+                               Foreground="Transparent"
+                               IsHitTestVisible="False"
+                               Text="88:88"
+                               TextAlignment="Center"
+                               Visibility="Hidden" />
+
+                    <TextBlock Style="{StaticResource ClockNumericTextStyle}"
+                               HorizontalAlignment="Center"
+                               Effect="{StaticResource TimeTextShadow}"
+                               FontFamily="{StaticResource ClockFont}"
+                               FontSize="150"
+                               FontStretch="Normal"
+                               FontWeight="ExtraBold"
+                               Foreground="White"
+                               Text="{Binding TimeText}"
+                               TextAlignment="Center" />
+                </Grid>
 
                 <TextBlock Grid.Row="1"
                            Margin="0,-12,0,0"
@@ -142,15 +163,30 @@
                                                Foreground="#D8FFFFFF"
                                                Text="{Binding Name}"
                                                TextAlignment="Right" />
-                                    <TextBlock Margin="0,-2,0,0"
-                                               HorizontalAlignment="Right"
-                                               FontFamily="{StaticResource ClockFont}"
-                                               FontSize="34"
-                                               FontStretch="Normal"
-                                               FontWeight="Bold"
-                                               Foreground="#F6FFFFFF"
-                                               Text="{Binding TimeText}"
-                                               TextAlignment="Right" />
+                                    <Grid Margin="0,-2,0,0"
+                                          HorizontalAlignment="Right">
+                                        <TextBlock Style="{StaticResource ClockNumericTextStyle}"
+                                                   HorizontalAlignment="Right"
+                                                   FontFamily="{StaticResource ClockFont}"
+                                                   FontSize="34"
+                                                   FontStretch="Normal"
+                                                   FontWeight="Bold"
+                                                   Foreground="Transparent"
+                                                   IsHitTestVisible="False"
+                                                   Text="88:88"
+                                                   TextAlignment="Right"
+                                                   Visibility="Hidden" />
+
+                                        <TextBlock Style="{StaticResource ClockNumericTextStyle}"
+                                                   HorizontalAlignment="Right"
+                                                   FontFamily="{StaticResource ClockFont}"
+                                                   FontSize="34"
+                                                   FontStretch="Normal"
+                                                   FontWeight="Bold"
+                                                   Foreground="#F6FFFFFF"
+                                                   Text="{Binding TimeText}"
+                                                   TextAlignment="Right" />
+                                    </Grid>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -209,15 +245,30 @@
                                                Foreground="#D8FFFFFF"
                                                Text="{Binding Name}"
                                                TextAlignment="Left" />
-                                    <TextBlock Margin="0,-2,0,0"
-                                               HorizontalAlignment="Left"
-                                               FontFamily="{StaticResource ClockFont}"
-                                               FontSize="34"
-                                               FontStretch="Normal"
-                                               FontWeight="Bold"
-                                               Foreground="#F6FFFFFF"
-                                               Text="{Binding TimeText}"
-                                               TextAlignment="Left" />
+                                    <Grid Margin="0,-2,0,0"
+                                          HorizontalAlignment="Left">
+                                        <TextBlock Style="{StaticResource ClockNumericTextStyle}"
+                                                   HorizontalAlignment="Left"
+                                                   FontFamily="{StaticResource ClockFont}"
+                                                   FontSize="34"
+                                                   FontStretch="Normal"
+                                                   FontWeight="Bold"
+                                                   Foreground="Transparent"
+                                                   IsHitTestVisible="False"
+                                                   Text="88:88"
+                                                   TextAlignment="Left"
+                                                   Visibility="Hidden" />
+
+                                        <TextBlock Style="{StaticResource ClockNumericTextStyle}"
+                                                   HorizontalAlignment="Left"
+                                                   FontFamily="{StaticResource ClockFont}"
+                                                   FontSize="34"
+                                                   FontStretch="Normal"
+                                                   FontWeight="Bold"
+                                                   Foreground="#F6FFFFFF"
+                                                   Text="{Binding TimeText}"
+                                                   TextAlignment="Left" />
+                                    </Grid>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
