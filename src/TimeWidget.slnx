@@ -1,6 +1,10 @@
 <Solution>
   <Project Path="TimeWidget\TimeWidget.csproj" />
+  <Project Path="TimeWidget.Tests\TimeWidget.Tests.csproj" />
   <Project Path="TimeWidget.Application\TimeWidget.Application.csproj" />
+  <Project Path="TimeWidget.Application.Tests\TimeWidget.Application.Tests.csproj" />
   <Project Path="TimeWidget.Domain\TimeWidget.Domain.csproj" />
+  <Project Path="TimeWidget.Domain.Tests\TimeWidget.Domain.Tests.csproj" />
   <Project Path="TimeWidget.Infrastructure\TimeWidget.Infrastructure.csproj" />
+  <Project Path="TimeWidget.Infrastructure.Tests\TimeWidget.Infrastructure.Tests.csproj" />
 </Solution>
