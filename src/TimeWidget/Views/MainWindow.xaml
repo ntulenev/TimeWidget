@@ -30,11 +30,7 @@
                           Color="#F2000000"
                           Opacity="1"
                           ShadowDepth="0" />
-        <Style TargetType="TextBlock">
-            <Setter Property="Effect" Value="{StaticResource ReadableTextShadow}" />
-        </Style>
         <Style x:Key="ClockNumericTextStyle"
-               BasedOn="{StaticResource {x:Type TextBlock}}"
                TargetType="TextBlock">
             <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
         </Style>
@@ -127,6 +123,7 @@
                 <TextBlock Grid.Row="1"
                            Margin="0,-12,0,0"
                            HorizontalAlignment="Center"
+                           Effect="{StaticResource ReadableTextShadow}"
                            FontFamily="{StaticResource ClockFont}"
                            FontSize="35"
                            FontStretch="Normal"
@@ -137,7 +134,8 @@
                            TextWrapping="Wrap" />
 
                 <Grid Grid.Row="3"
-                      Margin="0,4,0,0">
+                      Margin="0,4,0,0"
+                      Effect="{StaticResource ReadableTextShadow}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="36" />
@@ -281,6 +279,7 @@
                         BorderBrush="#52FFFFFF"
                         BorderThickness="1"
                         CornerRadius="22"
+                        Effect="{StaticResource ReadableTextShadow}"
                         Visibility="{Binding ShowCompactCalendarSection, Converter={StaticResource BoolToVisibilityConverter}}">
                     <Grid>
                         <Grid.RowDefinitions>
@@ -363,6 +362,7 @@
                     VerticalAlignment="Stretch"
                     BorderBrush="#52FFFFFF"
                     BorderThickness="1,0,0,0"
+                    Effect="{StaticResource ReadableTextShadow}"
                     Visibility="{Binding ShowFullCalendarSection, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Grid>
                     <Grid.RowDefinitions>
