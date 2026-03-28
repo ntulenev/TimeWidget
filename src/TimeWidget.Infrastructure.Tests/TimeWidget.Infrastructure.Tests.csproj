@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <NoWarn>IDE0058</NoWarn>
+    <NoWarn>$(NoWarn);CS1591;CA1515;CA1711;CA1849;CA2000;IDE0055;IDE0058;IDE1006</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

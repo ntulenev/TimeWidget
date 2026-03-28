@@ -4,8 +4,12 @@ using TimeWidget.Domain.Clock;
 
 namespace TimeWidget.Infrastructure.Configuration;
 
+/// <summary>
+/// Normalizes configured city clock settings after binding.
+/// </summary>
 public sealed class ClockCitiesSettingsConfiguration : IPostConfigureOptions<ClockCitiesSettings>
 {
+    /// <inheritdoc />
     public void PostConfigure(string? name, ClockCitiesSettings options)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -21,13 +25,15 @@ public sealed class ClockCitiesSettingsConfiguration : IPostConfigureOptions<Clo
             return [];
         }
 
-        return cities
+        return
+        [
+            .. cities
             .Select(city => new CityClockDefinition
             {
                 Name = city.Name,
                 TimeZoneId = city.TimeZoneId
             })
             .Where(city => city.IsConfigured)
-            .ToArray();
+        ];
     }
 }

@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -9,6 +8,9 @@ using TimeWidget.Domain.Weather;
 
 namespace TimeWidget.Infrastructure.Weather;
 
+/// <summary>
+/// Loads current weather data from the Open-Meteo API.
+/// </summary>
 public sealed class OpenMeteoWeatherService(HttpClient httpClient) : IWeatherService
 {
     private static readonly string TemperatureUnit =
@@ -20,12 +22,16 @@ public sealed class OpenMeteoWeatherService(HttpClient httpClient) : IWeatherSer
 
     private readonly HttpClient _httpClient = httpClient;
 
+    /// <inheritdoc />
     public async Task<WeatherSnapshot> GetCurrentWeatherAsync(
         Coordinates coordinates,
         CancellationToken cancellationToken)
     {
-        var requestUri = FormattableString.Invariant(
+        ArgumentNullException.ThrowIfNull(coordinates);
+
+        var requestPath = FormattableString.Invariant(
             $"v1/forecast?latitude={coordinates.Latitude}&longitude={coordinates.Longitude}&current=temperature_2m,weather_code,is_day&temperature_unit={TemperatureUnit}&timezone=auto");
+        var requestUri = new Uri(requestPath, UriKind.Relative);
 
         using var response = await _httpClient.GetAsync(requestUri, cancellationToken);
         response.EnsureSuccessStatusCode();

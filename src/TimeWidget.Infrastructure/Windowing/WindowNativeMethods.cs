@@ -2,6 +2,9 @@ using System.Runtime.InteropServices;
 
 namespace TimeWidget.Infrastructure.Windowing;
 
+/// <summary>
+/// Provides native windowing helpers used to host and position the widget on Windows.
+/// </summary>
 public static class WindowNativeMethods
 {
     private const int GwlStyle = -16;
@@ -12,26 +15,58 @@ public static class WindowNativeMethods
     private static readonly IntPtr HwndNotTopMost = new(-2);
     private static readonly IntPtr HwndTopMost = new(-1);
 
+    /// <summary>Window message sent when a window is shown or hidden.</summary>
     public const int WmShowWindow = 0x0018;
+
+    /// <summary>Window message sent when the window size changes.</summary>
     public const int WmSize = 0x0005;
+
+    /// <summary>Window message sent before a window is activated by mouse input.</summary>
     public const int WmMouseActivate = 0x0021;
+
+    /// <summary>Window message used to determine the hit-test result for a point.</summary>
     public const int WmNcHitTest = 0x0084;
+
+    /// <summary>Window message sent before a window position change is applied.</summary>
     public const int WmWindowPosChanging = 0x0046;
+
+    /// <summary>WinEvent identifier raised when the foreground window changes.</summary>
     public const uint EventSystemForeground = 0x0003;
 
+    /// <summary>Hit-test code that makes a window transparent to mouse input.</summary>
     public const int HtTransparent = -1;
+
+    /// <summary>Mouse-activate result that keeps the window from activating.</summary>
     public const int MaNoActivate = 3;
+
+    /// <summary>Window-size code for the minimized state.</summary>
     public const int SizeMinimized = 1;
 
+    /// <summary>ShowWindow command that displays a window normally.</summary>
     public const int SwShow = 5;
+
+    /// <summary>ShowWindow command that shows a window without activating it.</summary>
     public const int SwShownoActivate = 4;
 
+    /// <summary>SetWindowPos flag that preserves the current size.</summary>
     public const uint SwpNoSize = 0x0001;
+
+    /// <summary>SetWindowPos flag that preserves the current position.</summary>
     public const uint SwpNoMove = 0x0002;
+
+    /// <summary>SetWindowPos flag that preserves the current Z order.</summary>
     public const uint SwpNoZOrder = 0x0004;
+
+    /// <summary>SetWindowPos flag that prevents window activation.</summary>
     public const uint SwpNoActivate = 0x0010;
+
+    /// <summary>SetWindowPos flag that reapplies non-client frame styles.</summary>
     public const uint SwpFrameChanged = 0x0020;
+
+    /// <summary>SetWindowPos flag that shows the window.</summary>
     public const uint SwpShowWindow = 0x0040;
+
+    /// <summary>SetWindowPos flag that hides the window.</summary>
     public const uint SwpHideWindow = 0x0080;
 
     private const long WsChild = 0x40000000L;
@@ -44,16 +79,33 @@ public static class WindowNativeMethods
     private const uint WineventOutOfContext = 0x0000;
     private const uint WineventSkipOwnProcess = 0x0002;
 
+    /// <summary>
+    /// Attempts to read the current cursor position in screen coordinates.
+    /// </summary>
+    /// <param name="cursorPosition">When this method returns, contains the cursor position.</param>
+    /// <returns><see langword="true"/> when the position was read successfully; otherwise, <see langword="false"/>.</returns>
     public static bool TryGetCursorScreenPosition(out NativePoint cursorPosition)
     {
         return GetCursorPos(out cursorPosition);
     }
 
+    /// <summary>
+    /// Attempts to read the bounds of a native window.
+    /// </summary>
+    /// <param name="windowHandle">The target window handle.</param>
+    /// <param name="windowRect">When this method returns, contains the window bounds.</param>
+    /// <returns><see langword="true"/> when the bounds were read successfully; otherwise, <see langword="false"/>.</returns>
     public static bool TryGetWindowRectangle(IntPtr windowHandle, out NativeRect windowRect)
     {
         return GetWindowRect(windowHandle, out windowRect);
     }
 
+    /// <summary>
+    /// Moves a window without resizing or activating it.
+    /// </summary>
+    /// <param name="windowHandle">The target window handle.</param>
+    /// <param name="x">The new left coordinate in screen pixels.</param>
+    /// <param name="y">The new top coordinate in screen pixels.</param>
     public static void MoveWindow(IntPtr windowHandle, int x, int y)
     {
         _ = SetWindowPos(
@@ -66,6 +118,10 @@ public static class WindowNativeMethods
             SwpNoSize | SwpNoActivate | SwpNoZOrder);
     }
 
+    /// <summary>
+    /// Ensures a window is visible without taking focus.
+    /// </summary>
+    /// <param name="windowHandle">The target window handle.</param>
     public static void EnsureVisibleWithoutActivation(IntPtr windowHandle)
     {
         _ = ShowWindow(windowHandle, SwShownoActivate);
@@ -79,6 +135,10 @@ public static class WindowNativeMethods
             SwpNoMove | SwpNoSize | SwpNoActivate | SwpShowWindow);
     }
 
+    /// <summary>
+    /// Applies the tool-window styles used by the widget.
+    /// </summary>
+    /// <param name="windowHandle">The target window handle.</param>
     public static void ApplyWidgetWindowStyles(IntPtr windowHandle)
     {
         var exStyle = GetWindowLongPtr(windowHandle, GwlExStyle).ToInt64();
@@ -87,6 +147,11 @@ public static class WindowNativeMethods
         _ = SetWindowLongPtr(windowHandle, GwlExStyle, new IntPtr(exStyle));
     }
 
+    /// <summary>
+    /// Enables or disables the no-activate extended window style.
+    /// </summary>
+    /// <param name="windowHandle">The target window handle.</param>
+    /// <param name="enabled">A value indicating whether the style should be enabled.</param>
     public static void SetNoActivateStyle(IntPtr windowHandle, bool enabled)
     {
         var exStyle = GetWindowLongPtr(windowHandle, GwlExStyle).ToInt64();
@@ -105,6 +170,11 @@ public static class WindowNativeMethods
             SwpNoMove | SwpNoSize | SwpNoZOrder | SwpNoActivate | SwpFrameChanged);
     }
 
+    /// <summary>
+    /// Attempts to set the shell window as the owner of the specified window.
+    /// </summary>
+    /// <param name="windowHandle">The target window handle.</param>
+    /// <returns><see langword="true"/> when the owner was updated successfully; otherwise, <see langword="false"/>.</returns>
     public static bool TrySetWindowOwnerToShell(IntPtr windowHandle)
     {
         var shellWindow = GetShellWindow();
@@ -131,6 +201,10 @@ public static class WindowNativeMethods
         return true;
     }
 
+    /// <summary>
+    /// Clears the owner of the specified window.
+    /// </summary>
+    /// <param name="windowHandle">The target window handle.</param>
     public static void ClearWindowOwner(IntPtr windowHandle)
     {
         SetKernelLastError(0);
@@ -145,6 +219,11 @@ public static class WindowNativeMethods
             SwpNoMove | SwpNoSize | SwpNoZOrder | SwpNoActivate | SwpFrameChanged);
     }
 
+    /// <summary>
+    /// Registers a WinEvent hook for foreground-window changes.
+    /// </summary>
+    /// <param name="callback">The callback invoked for foreground-window events.</param>
+    /// <returns>The hook handle, or <see cref="IntPtr.Zero"/> when registration fails.</returns>
     public static IntPtr SetForegroundEventHook(WinEventProc callback)
     {
         return SetWinEventHook(
@@ -157,6 +236,10 @@ public static class WindowNativeMethods
             WineventOutOfContext | WineventSkipOwnProcess);
     }
 
+    /// <summary>
+    /// Removes a previously registered WinEvent hook.
+    /// </summary>
+    /// <param name="hookHandle">The hook handle to remove.</param>
     public static void RemoveWinEventHook(IntPtr hookHandle)
     {
         if (hookHandle != IntPtr.Zero)
@@ -165,6 +248,11 @@ public static class WindowNativeMethods
         }
     }
 
+    /// <summary>
+    /// Attempts to attach the widget window to a desktop host window.
+    /// </summary>
+    /// <param name="windowHandle">The widget window handle.</param>
+    /// <returns><see langword="true"/> when the window was attached successfully; otherwise, <see langword="false"/>.</returns>
     public static bool TryAttachWindowToDesktopHost(IntPtr windowHandle)
     {
         foreach (var desktopHost in GetDesktopHostCandidates())
@@ -183,6 +271,10 @@ public static class WindowNativeMethods
         return false;
     }
 
+    /// <summary>
+    /// Detaches the widget window from its desktop host.
+    /// </summary>
+    /// <param name="windowHandle">The widget window handle.</param>
     public static void DetachWindowFromDesktopHost(IntPtr windowHandle)
     {
         _ = SetParent(windowHandle, IntPtr.Zero);
@@ -198,6 +290,10 @@ public static class WindowNativeMethods
             SwpNoMove | SwpNoSize | SwpShowWindow);
     }
 
+    /// <summary>
+    /// Sends the widget window behind normal application windows for wallpaper mode.
+    /// </summary>
+    /// <param name="windowHandle">The widget window handle.</param>
     public static void SendWindowToBackForWallpaper(IntPtr windowHandle)
     {
         _ = ShowWindow(windowHandle, SwShownoActivate);
@@ -211,6 +307,10 @@ public static class WindowNativeMethods
             SwpNoMove | SwpNoSize | SwpNoActivate | SwpShowWindow);
     }
 
+    /// <summary>
+    /// Brings the widget window to the front for interactive editing.
+    /// </summary>
+    /// <param name="windowHandle">The widget window handle.</param>
     public static void BringToFrontForEditing(IntPtr windowHandle)
     {
         _ = ShowWindow(windowHandle, SwShow);
@@ -395,6 +495,16 @@ public static class WindowNativeMethods
 
     private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
+    /// <summary>
+    /// Represents a callback invoked for WinEvent notifications.
+    /// </summary>
+    /// <param name="hWinEventHook">The hook handle that raised the event.</param>
+    /// <param name="eventType">The WinEvent identifier.</param>
+    /// <param name="hwnd">The related window handle.</param>
+    /// <param name="idObject">The object identifier.</param>
+    /// <param name="idChild">The child identifier.</param>
+    /// <param name="idEventThread">The thread that generated the event.</param>
+    /// <param name="dwmsEventTime">The event timestamp.</param>
     public delegate void WinEventProc(
         IntPtr hWinEventHook,
         uint eventType,
@@ -404,31 +514,63 @@ public static class WindowNativeMethods
         uint idEventThread,
         uint dwmsEventTime);
 
+    /// <summary>
+    /// Represents a native screen point.
+    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct NativePoint
     {
+        /// <summary>The horizontal coordinate.</summary>
         public int X;
+
+        /// <summary>The vertical coordinate.</summary>
         public int Y;
     }
 
+    /// <summary>
+    /// Represents a native window rectangle.
+    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct NativeRect
     {
+        /// <summary>The left coordinate.</summary>
         public int Left;
+
+        /// <summary>The top coordinate.</summary>
         public int Top;
+
+        /// <summary>The right coordinate.</summary>
         public int Right;
+
+        /// <summary>The bottom coordinate.</summary>
         public int Bottom;
     }
 
+    /// <summary>
+    /// Represents the native <c>WINDOWPOS</c> structure.
+    /// </summary>
     [StructLayout(LayoutKind.Sequential)]
     public struct WindowPos
     {
+        /// <summary>The target window handle.</summary>
         public IntPtr Hwnd;
+
+        /// <summary>The window inserted after this handle in the Z order.</summary>
         public IntPtr HwndInsertAfter;
+
+        /// <summary>The target X coordinate.</summary>
         public int X;
+
+        /// <summary>The target Y coordinate.</summary>
         public int Y;
+
+        /// <summary>The target width.</summary>
         public int Cx;
+
+        /// <summary>The target height.</summary>
         public int Cy;
+
+        /// <summary>The associated positioning flags.</summary>
         public uint Flags;
     }
 }

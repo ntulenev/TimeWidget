@@ -13,8 +13,17 @@ using TimeWidget.Infrastructure.Weather;
 
 namespace TimeWidget.Infrastructure.Configuration;
 
+/// <summary>
+/// Registers infrastructure-layer services for the widget.
+/// </summary>
 public static class InfrastructureServiceCollectionExtensions
 {
+    /// <summary>
+    /// Adds infrastructure services and bound configuration for the widget.
+    /// </summary>
+    /// <param name="services">The service collection to configure.</param>
+    /// <param name="configuration">The application configuration.</param>
+    /// <returns>The same service collection for chaining.</returns>
     public static IServiceCollection AddTimeWidgetInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)

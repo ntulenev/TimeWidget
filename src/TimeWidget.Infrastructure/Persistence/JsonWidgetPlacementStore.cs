@@ -1,4 +1,3 @@
-using System.IO;
 using System.Text.Json;
 
 using TimeWidget.Application.Abstractions;
@@ -6,13 +5,22 @@ using TimeWidget.Domain.Widget;
 
 namespace TimeWidget.Infrastructure.Persistence;
 
+/// <summary>
+/// Persists widget placement to a JSON file in local application data.
+/// </summary>
 public sealed class JsonWidgetPlacementStore : IWidgetPlacementStore
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        WriteIndented = true
+    };
+
     private static readonly string SettingsFilePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "TimeWidget",
         "widget-settings.json");
 
+    /// <inheritdoc />
     public void SaveWindowPlacement(WidgetPlacement placement)
     {
         try
@@ -23,12 +31,7 @@ public sealed class JsonWidgetPlacementStore : IWidgetPlacementStore
                 Directory.CreateDirectory(settingsDirectory);
             }
 
-            var payload = JsonSerializer.Serialize(
-                placement,
-                new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
+            var payload = JsonSerializer.Serialize(placement, SerializerOptions);
 
             File.WriteAllText(SettingsFilePath, payload);
         }
@@ -38,6 +41,7 @@ public sealed class JsonWidgetPlacementStore : IWidgetPlacementStore
         }
     }
 
+    /// <inheritdoc />
     public bool TryLoadWindowPlacement(out WidgetPlacement placement)
     {
         try

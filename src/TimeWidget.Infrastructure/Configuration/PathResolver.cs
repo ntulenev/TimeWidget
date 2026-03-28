@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace TimeWidget.Infrastructure.Configuration;
 
 internal static class PathResolver

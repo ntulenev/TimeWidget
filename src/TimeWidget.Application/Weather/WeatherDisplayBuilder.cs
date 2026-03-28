@@ -1,9 +1,22 @@
 namespace TimeWidget.Application.Weather;
 
+/// <summary>
+/// Converts weather load results into UI-facing display state.
+/// </summary>
 public sealed class WeatherDisplayBuilder
 {
+    private readonly string _locationUnavailableText = "Enable Windows location";
+    private readonly string _weatherUnavailableText = "Weather unavailable";
+
+    /// <summary>
+    /// Builds the weather display state.
+    /// </summary>
+    /// <param name="result">The weather load result.</param>
+    /// <returns>The display state to render.</returns>
     public WeatherDisplayState Build(WeatherLoadResult result)
     {
+        ArgumentNullException.ThrowIfNull(result);
+
         return result.Status switch
         {
             WeatherLoadStatus.Success when result.Snapshot is not null => new WeatherDisplayState(
@@ -14,12 +27,17 @@ public sealed class WeatherDisplayBuilder
             WeatherLoadStatus.LocationUnavailable => new WeatherDisplayState(
                 string.Empty,
                 string.Empty,
-                "Enable Windows location",
+                _locationUnavailableText,
+                false),
+            WeatherLoadStatus.Unavailable => new WeatherDisplayState(
+                string.Empty,
+                string.Empty,
+                _weatherUnavailableText,
                 false),
             _ => new WeatherDisplayState(
                 string.Empty,
                 string.Empty,
-                "Weather unavailable",
+                _weatherUnavailableText,
                 false)
         };
     }

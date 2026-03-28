@@ -4,10 +4,14 @@ using TimeWidget.Domain.Configuration;
 
 namespace TimeWidget.Infrastructure.Configuration;
 
+/// <summary>
+/// Normalizes and validates widget positioning settings after binding.
+/// </summary>
 public sealed class WidgetPositioningSettingsConfiguration :
     IPostConfigureOptions<WidgetPositioningSettings>,
     IValidateOptions<WidgetPositioningSettings>
 {
+    /// <inheritdoc />
     public void PostConfigure(string? name, WidgetPositioningSettings options)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -31,6 +35,7 @@ public sealed class WidgetPositioningSettingsConfiguration :
         }
     }
 
+    /// <inheritdoc />
     public ValidateOptionsResult Validate(string? name, WidgetPositioningSettings options)
     {
         ArgumentNullException.ThrowIfNull(options);

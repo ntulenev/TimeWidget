@@ -10,6 +10,9 @@ using TimeWidget.Domain.Widget;
 
 namespace TimeWidget.ViewModels;
 
+/// <summary>
+/// Exposes the state and commands for the main widget window.
+/// </summary>
 public sealed class MainWindowViewModel : ObservableObject, IDisposable
 {
     private static readonly TimeSpan ClockRefreshInterval = TimeSpan.FromSeconds(1);
@@ -40,6 +43,10 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     private bool _showCalendarEvents;
     private bool _showCalendarStatus;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class.
+    /// </summary>
+    /// <param name="dashboardService">The dashboard service used to load widget data.</param>
     public MainWindowViewModel(WidgetDashboardService dashboardService)
     {
         ArgumentNullException.ThrowIfNull(dashboardService);
@@ -74,18 +81,39 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         _clockTimer.Start();
     }
 
+    /// <summary>
+    /// Occurs when the window should switch into editing mode.
+    /// </summary>
     public event EventHandler? ShowForEditingRequested;
 
+    /// <summary>
+    /// Occurs when the window should return to wallpaper mode.
+    /// </summary>
     public event EventHandler? ReturnToWallpaperModeRequested;
 
+    /// <summary>
+    /// Occurs when the widget should be centered on the current screen.
+    /// </summary>
     public event EventHandler? CenterUpWidgetRequested;
 
+    /// <summary>
+    /// Gets the command that switches the widget into editing mode.
+    /// </summary>
     public ICommand ShowForEditingCommand { get; }
 
+    /// <summary>
+    /// Gets the command that returns the widget to wallpaper mode.
+    /// </summary>
     public ICommand ReturnToWallpaperModeCommand { get; }
 
+    /// <summary>
+    /// Gets the command that centers the widget.
+    /// </summary>
     public ICommand CenterUpWidgetCommand { get; }
 
+    /// <summary>
+    /// Gets a value indicating whether the widget is currently in wallpaper mode.
+    /// </summary>
     public bool IsWallpaperMode
     {
         get => _isWallpaperMode;
@@ -98,84 +126,139 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets a value indicating whether edit chrome should be visible.
+    /// </summary>
     public bool EditChromeVisible => !IsWallpaperMode;
 
+    /// <summary>
+    /// Gets the left-side city clocks.
+    /// </summary>
     public ReadOnlyObservableCollection<CityClockItemViewModel> LeftCityTimes => _leftCityTimes;
 
+    /// <summary>
+    /// Gets the right-side city clocks.
+    /// </summary>
     public ReadOnlyObservableCollection<CityClockItemViewModel> RightCityTimes => _rightCityTimes;
 
+    /// <summary>
+    /// Gets a value indicating whether the left-side clocks collection has items.
+    /// </summary>
     public bool HasLeftCityTimes => LeftCityTimes.Count > 0;
 
+    /// <summary>
+    /// Gets a value indicating whether the right-side clocks collection has items.
+    /// </summary>
     public bool HasRightCityTimes => RightCityTimes.Count > 0;
 
+    /// <summary>
+    /// Gets the calendar events shown in the widget.
+    /// </summary>
     public ReadOnlyObservableCollection<CalendarEventItemViewModel> CalendarEvents => _calendarEvents;
 
+    /// <summary>
+    /// Gets the main time text.
+    /// </summary>
     public string TimeText
     {
         get => _timeText;
         private set => SetProperty(ref _timeText, value);
     }
 
+    /// <summary>
+    /// Gets the formatted date text.
+    /// </summary>
     public string DateText
     {
         get => _dateText;
         private set => SetProperty(ref _dateText, value);
     }
 
+    /// <summary>
+    /// Gets the calendar status text.
+    /// </summary>
     public string CalendarStatusText
     {
         get => _calendarStatusText;
         private set => SetProperty(ref _calendarStatusText, value);
     }
 
+    /// <summary>
+    /// Gets the weather temperature text.
+    /// </summary>
     public string WeatherTemperatureText
     {
         get => _weatherTemperatureText;
         private set => SetProperty(ref _weatherTemperatureText, value);
     }
 
+    /// <summary>
+    /// Gets the weather condition text.
+    /// </summary>
     public string WeatherConditionText
     {
         get => _weatherConditionText;
         private set => SetProperty(ref _weatherConditionText, value);
     }
 
+    /// <summary>
+    /// Gets the weather location text.
+    /// </summary>
     public string WeatherLocationText
     {
         get => _weatherLocationText;
         private set => SetProperty(ref _weatherLocationText, value);
     }
 
+    /// <summary>
+    /// Gets a value indicating whether weather details are available.
+    /// </summary>
     public bool HasWeatherDetails
     {
         get => _hasWeatherDetails;
         private set => SetProperty(ref _hasWeatherDetails, value);
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the compact calendar section should be shown.
+    /// </summary>
     public bool ShowCompactCalendarSection
     {
         get => _showCompactCalendarSection;
         private set => SetProperty(ref _showCompactCalendarSection, value);
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the full calendar section should be shown.
+    /// </summary>
     public bool ShowFullCalendarSection
     {
         get => _showFullCalendarSection;
         private set => SetProperty(ref _showFullCalendarSection, value);
     }
 
+    /// <summary>
+    /// Gets a value indicating whether calendar events should be shown.
+    /// </summary>
     public bool ShowCalendarEvents
     {
         get => _showCalendarEvents;
         private set => SetProperty(ref _showCalendarEvents, value);
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the calendar status should be shown.
+    /// </summary>
     public bool ShowCalendarStatus
     {
         get => _showCalendarStatus;
         private set => SetProperty(ref _showCalendarStatus, value);
     }
 
+    /// <summary>
+    /// Initializes the widget data and starts background refresh timers.
+    /// </summary>
+    /// <returns>A task that completes when initialization finishes.</returns>
     public async Task InitializeAsync()
     {
         await RefreshWeatherCoreAsync();
@@ -188,12 +271,19 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Stops background refresh timers when the system is suspending.
+    /// </summary>
     public void HandleSuspend()
     {
         _calendarTimer.Stop();
         _weatherTimer.Stop();
     }
 
+    /// <summary>
+    /// Restarts background refreshes after the system resumes.
+    /// </summary>
+    /// <returns>A task that completes when resume handling finishes.</returns>
     public async Task HandleResumeAsync()
     {
         _calendarTimer.Stop();
@@ -216,6 +306,10 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Refreshes weather data immediately.
+    /// </summary>
+    /// <returns>A task that completes when the refresh finishes.</returns>
     public async Task RefreshWeatherNowAsync()
     {
         _weatherTimer.Stop();
@@ -223,6 +317,10 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         _weatherTimer.Start();
     }
 
+    /// <summary>
+    /// Refreshes calendar data immediately.
+    /// </summary>
+    /// <returns>A task that completes when the refresh finishes.</returns>
     public async Task RefreshCalendarNowAsync()
     {
         _calendarTimer.Stop();
@@ -234,6 +332,10 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Removes calendar authorization and updates the view state.
+    /// </summary>
+    /// <returns>A task that completes when the operation finishes.</returns>
     public async Task ForgetCalendarAuthorizationAsync()
     {
         _calendarTimer.Stop();
@@ -245,16 +347,29 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Saves the current screen position.
+    /// </summary>
+    /// <param name="left">The left position in screen pixels.</param>
+    /// <param name="top">The top position in screen pixels.</param>
     public void SaveScreenPosition(int left, int top)
     {
         _dashboardService.SavePlacement(new WidgetPlacement(left, top));
     }
 
+    /// <summary>
+    /// Attempts to load the previously saved window placement.
+    /// </summary>
+    /// <param name="placement">When this method returns, contains the loaded placement if one exists.</param>
+    /// <returns><see langword="true"/> when a placement was loaded; otherwise, <see langword="false"/>.</returns>
     public bool TryLoadWindowPlacement(out WidgetPlacement placement)
     {
         return _dashboardService.TryLoadPlacement(out placement);
     }
 
+    /// <summary>
+    /// Stops background timers owned by the view model.
+    /// </summary>
     public void Dispose()
     {
         _clockTimer.Stop();

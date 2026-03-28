@@ -34,8 +34,8 @@ public sealed class WidgetPositioningSettingsTests
         };
 
         // Act
-        var centerOffsetRatio = settings.GetCenterUpVerticalOffsetRatio();
-        var idleOpacity = settings.GetIdleOpacity();
+        var centerOffsetRatio = settings.CenterUpVerticalOffsetRatio;
+        var idleOpacity = settings.IdleOpacity;
         var layoutScale = settings.GetLayoutScale(1.15);
 
         // Assert

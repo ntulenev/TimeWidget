@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.IO;
 
 using Google;
 using Google.Apis.Auth.OAuth2;
@@ -20,6 +19,9 @@ using TimeWidget.Infrastructure.Configuration;
 
 namespace TimeWidget.Infrastructure.Calendar;
 
+/// <summary>
+/// Loads Google Calendar events for the widget.
+/// </summary>
 public sealed class GoogleCalendarService : ICalendarService
 {
     private const string TokenStoreUserId = "timewidget-google-calendar";
@@ -31,6 +33,10 @@ public sealed class GoogleCalendarService : ICalendarService
 
     private readonly GoogleCalendarSettings _settings;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GoogleCalendarService"/> class.
+    /// </summary>
+    /// <param name="settings">The configured Google Calendar settings.</param>
     public GoogleCalendarService(IOptions<GoogleCalendarSettings> settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -38,8 +44,10 @@ public sealed class GoogleCalendarService : ICalendarService
         _settings = settings.Value;
     }
 
+    /// <inheritdoc />
     public bool IsEnabled => _settings.Enabled;
 
+    /// <inheritdoc />
     public async Task<CalendarLoadResult> GetUpcomingEventsAsync(
         CalendarInteractionMode interactionMode,
         CancellationToken cancellationToken)
@@ -111,6 +119,7 @@ public sealed class GoogleCalendarService : ICalendarService
         }
     }
 
+    /// <inheritdoc />
     public async Task ForgetAuthorizationAsync(CancellationToken cancellationToken)
     {
         if (!IsEnabled)
@@ -158,7 +167,7 @@ public sealed class GoogleCalendarService : ICalendarService
         return new PkceGoogleAuthorizationCodeFlow(initializer);
     }
 
-    private async Task<UserCredential?> GetCredentialAsync(
+    private static async Task<UserCredential?> GetCredentialAsync(
         GoogleAuthorizationCodeFlow flow,
         CalendarInteractionMode interactionMode,
         CancellationToken cancellationToken)

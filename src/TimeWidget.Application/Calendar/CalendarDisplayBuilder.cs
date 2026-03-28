@@ -5,15 +5,28 @@ using TimeWidget.Domain.Configuration;
 
 namespace TimeWidget.Application.Calendar;
 
+/// <summary>
+/// Converts calendar domain results into UI-facing display state.
+/// </summary>
 public sealed class CalendarDisplayBuilder
 {
-    private static readonly CultureInfo DateCulture = CultureInfo.GetCultureInfo("en-US");
+    private readonly CultureInfo _dateCulture = CultureInfo.GetCultureInfo("en-US");
 
+    /// <summary>
+    /// Builds the calendar display model for the main widget view.
+    /// </summary>
+    /// <param name="result">The loaded calendar result.</param>
+    /// <param name="settings">The calendar settings that control the layout.</param>
+    /// <param name="now">The current timestamp used to label relative dates.</param>
+    /// <returns>The display state to render.</returns>
     public CalendarDisplayState Build(
         CalendarLoadResult result,
         GoogleCalendarSettings settings,
         DateTimeOffset now)
     {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(settings);
+
         var events = result.Agenda.Events
             .Select(calendarEvent => CreateCalendarEvent(calendarEvent, now))
             .ToArray();
@@ -30,15 +43,22 @@ public sealed class CalendarDisplayBuilder
             showSection && settings.IsFullCalendarMode);
     }
 
+    /// <summary>
+    /// Builds the display state shown after calendar authorization has been removed.
+    /// </summary>
+    /// <param name="settings">The calendar settings that control the layout.</param>
+    /// <returns>The signed-out display state.</returns>
     public CalendarDisplayState BuildSignedOutState(GoogleCalendarSettings settings)
     {
+        ArgumentNullException.ThrowIfNull(settings);
+
         return Build(
             CalendarLoadResult.FromStatus(CalendarLoadStatus.AuthorizationRemoved),
             settings,
             DateTimeOffset.Now);
     }
 
-    private static CalendarEventDisplayState CreateCalendarEvent(
+    private CalendarEventDisplayState CreateCalendarEvent(
         CalendarEvent calendarEvent,
         DateTimeOffset now)
     {
@@ -90,7 +110,7 @@ public sealed class CalendarDisplayBuilder
         return "?";
     }
 
-    private static string GetCalendarDayLabel(DateTime eventDate, DateTime currentDate)
+    private string GetCalendarDayLabel(DateTime eventDate, DateTime currentDate)
     {
         if (eventDate == currentDate)
         {
@@ -102,6 +122,6 @@ public sealed class CalendarDisplayBuilder
             return "Tomorrow";
         }
 
-        return eventDate.ToString("ddd, d MMM", DateCulture);
+        return eventDate.ToString("ddd, d MMM", _dateCulture);
     }
 }

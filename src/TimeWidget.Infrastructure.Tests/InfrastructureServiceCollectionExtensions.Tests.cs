@@ -12,7 +12,6 @@ using TimeWidget.Infrastructure.Clock;
 using TimeWidget.Infrastructure.Configuration;
 using TimeWidget.Infrastructure.Location;
 using TimeWidget.Infrastructure.Persistence;
-using TimeWidget.Infrastructure.Weather;
 
 namespace TimeWidget.Infrastructure.Tests;
 

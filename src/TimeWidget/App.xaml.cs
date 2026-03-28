@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.IO;
 using System.Windows;
 
@@ -7,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 using TimeWidget.Application.Widget;
+using TimeWidget.DependencyInjection;
 using TimeWidget.Infrastructure.Configuration;
 using TimeWidget.ViewModels;
 using TimeWidget.Views;
@@ -15,11 +15,15 @@ using Forms = System.Windows.Forms;
 
 namespace TimeWidget;
 
+/// <summary>
+/// WPF application entry point for the widget.
+/// </summary>
 public partial class App : System.Windows.Application
 {
     private Forms.NotifyIcon? _notifyIcon;
     private IHost? _host;
 
+    /// <inheritdoc />
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -34,6 +38,7 @@ public partial class App : System.Windows.Application
         mainWindow.Show();
     }
 
+    /// <inheritdoc />
     protected override void OnExit(ExitEventArgs e)
     {
         if (_notifyIcon is not null)
@@ -159,15 +164,17 @@ public partial class App : System.Windows.Application
 
     private static Forms.Screen[] GetOrderedScreens()
     {
-        return Forms.Screen.AllScreens
+        return
+        [
+            .. Forms.Screen.AllScreens
             .OrderBy(screen => GetDisplayIndex(screen) is var index && index > 0 ? index : int.MaxValue)
             .ThenBy(screen => screen.DeviceName, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        ];
     }
 
     private static int GetDisplayIndex(Forms.Screen screen)
     {
-        var digits = new string(screen.DeviceName.Where(char.IsDigit).ToArray());
+        var digits = new string([.. screen.DeviceName.Where(char.IsDigit)]);
         return int.TryParse(digits, out var index) ? index : -1;
     }
 }

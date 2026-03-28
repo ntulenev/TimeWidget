@@ -2,6 +2,7 @@ using FluentAssertions;
 
 using Microsoft.Extensions.DependencyInjection;
 
+using TimeWidget.DependencyInjection;
 using TimeWidget.Presentation;
 using TimeWidget.ViewModels;
 using TimeWidget.Views;

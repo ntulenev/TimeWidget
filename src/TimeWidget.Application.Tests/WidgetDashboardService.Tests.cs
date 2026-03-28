@@ -70,6 +70,8 @@ public sealed class WidgetDashboardServiceTests
             case "googleCalendarOptions":
                 dependencies.GoogleCalendarOptions = null;
                 break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(dependencyName), dependencyName, null);
         }
 
         // Assert

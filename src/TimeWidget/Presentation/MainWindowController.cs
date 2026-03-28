@@ -19,6 +19,9 @@ using WpfPoint = System.Windows.Point;
 
 namespace TimeWidget.Presentation;
 
+/// <summary>
+/// Coordinates the main window behavior, placement, and wallpaper/editing modes.
+/// </summary>
 public sealed class MainWindowController
 {
     private const double DefaultLayoutScale = 1.15;
@@ -46,6 +49,11 @@ public sealed class MainWindowController
     private readonly double _idleOpacity;
     private readonly double _hoverOpacity;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainWindowController"/> class.
+    /// </summary>
+    /// <param name="widgetPositioningOptions">The configured widget positioning settings.</param>
+    /// <param name="googleCalendarOptions">The configured Google Calendar settings.</param>
     public MainWindowController(
         IOptions<WidgetPositioningSettings> widgetPositioningOptions,
         IOptions<GoogleCalendarSettings> googleCalendarOptions)
@@ -55,11 +63,17 @@ public sealed class MainWindowController
 
         _widgetPositioningSettings = widgetPositioningOptions.Value;
         _googleCalendarSettings = googleCalendarOptions.Value;
-        _centerUpVerticalOffsetRatio = _widgetPositioningSettings.GetCenterUpVerticalOffsetRatio();
-        _idleOpacity = _widgetPositioningSettings.GetIdleOpacity();
+        _centerUpVerticalOffsetRatio = _widgetPositioningSettings.CenterUpVerticalOffsetRatio;
+        _idleOpacity = _widgetPositioningSettings.IdleOpacity;
         _hoverOpacity = Math.Min(_idleOpacity + HoverOpacityDelta, 1d);
     }
 
+    /// <summary>
+    /// Attaches the controller to the main window and its view model.
+    /// </summary>
+    /// <param name="window">The target window.</param>
+    /// <param name="viewModel">The bound view model.</param>
+    /// <param name="rootScaleTransform">The root scale transform used for layout scaling.</param>
     public void Attach(MainWindow window, MainWindowViewModel viewModel, ScaleTransform rootScaleTransform)
     {
         ArgumentNullException.ThrowIfNull(window);
@@ -81,6 +95,10 @@ public sealed class MainWindowController
         SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
     }
 
+    /// <summary>
+    /// Handles post-load initialization for the window.
+    /// </summary>
+    /// <returns>A task that completes when initialization finishes.</returns>
     public async Task OnLoadedAsync()
     {
         try
@@ -97,6 +115,9 @@ public sealed class MainWindowController
         }
     }
 
+    /// <summary>
+    /// Performs cleanup when the window is closing.
+    /// </summary>
     public void OnClosed()
     {
         SaveWindowPosition();
@@ -119,6 +140,9 @@ public sealed class MainWindowController
         }
     }
 
+    /// <summary>
+    /// Handles source initialization once the native window handle is available.
+    /// </summary>
     public void OnSourceInitialized()
     {
         _windowHandle = new WindowInteropHelper(Window).Handle;
@@ -129,6 +153,11 @@ public sealed class MainWindowController
         ApplyCurrentWidgetMode(bringToFront: false);
     }
 
+    /// <summary>
+    /// Starts dragging the window from the drag area.
+    /// </summary>
+    /// <param name="sender">The drag source element.</param>
+    /// <param name="e">The mouse event arguments.</param>
     public void HandleDragAreaMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (ViewModel.IsWallpaperMode ||
@@ -158,6 +187,10 @@ public sealed class MainWindowController
         e.Handled = true;
     }
 
+    /// <summary>
+    /// Updates the window position while a drag operation is active.
+    /// </summary>
+    /// <param name="e">The mouse event arguments.</param>
     public void HandleDragAreaMouseMove(System.Windows.Input.MouseEventArgs e)
     {
         if (ViewModel.IsWallpaperMode || !_isDragging)
@@ -182,6 +215,9 @@ public sealed class MainWindowController
             cursorPosition.Y - _dragOffset.Y);
     }
 
+    /// <summary>
+    /// Completes the current drag operation.
+    /// </summary>
     public void HandleDragAreaMouseLeftButtonUp()
     {
         if (ViewModel.IsWallpaperMode)
@@ -194,6 +230,9 @@ public sealed class MainWindowController
         SaveWindowPosition();
     }
 
+    /// <summary>
+    /// Handles mouse-enter transitions for the window.
+    /// </summary>
     public void HandleMouseEnter()
     {
         if (!ViewModel.IsWallpaperMode)
@@ -202,6 +241,9 @@ public sealed class MainWindowController
         }
     }
 
+    /// <summary>
+    /// Handles mouse-leave transitions for the window.
+    /// </summary>
     public void HandleMouseLeave()
     {
         if (!ViewModel.IsWallpaperMode)
@@ -210,6 +252,10 @@ public sealed class MainWindowController
         }
     }
 
+    /// <summary>
+    /// Handles key input for the window.
+    /// </summary>
+    /// <param name="e">The key event arguments.</param>
     public void HandleKeyDown(System.Windows.Input.KeyEventArgs e)
     {
         if (!ViewModel.IsWallpaperMode && e.Key == Key.Escape)
@@ -218,6 +264,10 @@ public sealed class MainWindowController
         }
     }
 
+    /// <summary>
+    /// Centers the widget on the specified screen using the configured offset.
+    /// </summary>
+    /// <param name="screen">The target screen.</param>
     public void CenterUpOnScreen(Forms.Screen screen)
     {
         ArgumentNullException.ThrowIfNull(screen);

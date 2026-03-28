@@ -8,10 +8,18 @@ using Forms = System.Windows.Forms;
 
 namespace TimeWidget.Views;
 
+/// <summary>
+/// Main widget window.
+/// </summary>
 public partial class MainWindow : Window
 {
     private readonly MainWindowController _controller;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MainWindow"/> class.
+    /// </summary>
+    /// <param name="viewModel">The window view model.</param>
+    /// <param name="controller">The window controller.</param>
     public MainWindow(
         MainWindowViewModel viewModel,
         MainWindowController controller)
@@ -75,6 +83,10 @@ public partial class MainWindow : Window
         _controller.HandleKeyDown(e);
     }
 
+    /// <summary>
+    /// Centers the window on the specified screen.
+    /// </summary>
+    /// <param name="screen">The target screen.</param>
     public void CenterUpOnScreen(Forms.Screen screen)
     {
         _controller.CenterUpOnScreen(screen);

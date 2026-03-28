@@ -1,15 +1,20 @@
 using TimeWidget.Application.Abstractions;
 using TimeWidget.Domain.Location;
+
 using Windows.Devices.Geolocation;
 
 namespace TimeWidget.Infrastructure.Location;
 
+/// <summary>
+/// Resolves the current location using Windows geolocation APIs.
+/// </summary>
 public sealed class WindowsLocationService : ILocationService
 {
     private static readonly double? FallbackLatitude = null;
     private static readonly double? FallbackLongitude = null;
     private static readonly string? FallbackLocationLabel = null;
 
+    /// <inheritdoc />
     public async Task<Coordinates?> TryGetCoordinatesAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

@@ -4,10 +4,14 @@ using TimeWidget.Domain.Configuration;
 
 namespace TimeWidget.Infrastructure.Configuration;
 
+/// <summary>
+/// Normalizes and validates Google Calendar settings after binding.
+/// </summary>
 public sealed class GoogleCalendarSettingsConfiguration :
     IPostConfigureOptions<GoogleCalendarSettings>,
     IValidateOptions<GoogleCalendarSettings>
 {
+    /// <inheritdoc />
     public void PostConfigure(string? name, GoogleCalendarSettings options)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -30,6 +34,7 @@ public sealed class GoogleCalendarSettingsConfiguration :
             : options.LoginHint.Trim();
     }
 
+    /// <inheritdoc />
     public ValidateOptionsResult Validate(string? name, GoogleCalendarSettings options)
     {
         ArgumentNullException.ThrowIfNull(options);
