@@ -22,7 +22,8 @@ namespace TimeWidget.Presentation;
 public sealed class MainWindowController
 {
     private const double DefaultLayoutScale = 1.15;
-    private const double DefaultWidgetWidth = 780;
+    private const double DefaultCompactWidgetWidth = 780;
+    private const double DefaultFullCalendarWidgetWidth = 1320;
     private const double HoverOpacityDelta = 0.06;
     private const bool PreferDesktopHostedWallpaperMode = false;
 
@@ -40,15 +41,20 @@ public sealed class MainWindowController
     private int _wallpaperRestoreRequestId;
     private WindowNativeMethods.NativePoint _dragOffset;
     private readonly WidgetPositioningSettings _widgetPositioningSettings;
+    private readonly GoogleCalendarSettings _googleCalendarSettings;
     private readonly double _centerUpVerticalOffsetRatio;
     private readonly double _idleOpacity;
     private readonly double _hoverOpacity;
 
-    public MainWindowController(IOptions<WidgetPositioningSettings> widgetPositioningOptions)
+    public MainWindowController(
+        IOptions<WidgetPositioningSettings> widgetPositioningOptions,
+        IOptions<GoogleCalendarSettings> googleCalendarOptions)
     {
         ArgumentNullException.ThrowIfNull(widgetPositioningOptions);
+        ArgumentNullException.ThrowIfNull(googleCalendarOptions);
 
         _widgetPositioningSettings = widgetPositioningOptions.Value;
+        _googleCalendarSettings = googleCalendarOptions.Value;
         _centerUpVerticalOffsetRatio = _widgetPositioningSettings.GetCenterUpVerticalOffsetRatio();
         _idleOpacity = _widgetPositioningSettings.GetIdleOpacity();
         _hoverOpacity = Math.Min(_idleOpacity + HoverOpacityDelta, 1d);
@@ -66,7 +72,7 @@ public sealed class MainWindowController
         ApplyLayoutScaleForScreen(GetCurrentScreen());
 
         _window.Topmost = false;
-        _window.Opacity = _idleOpacity;
+        _window.Opacity = 0d;
 
         _viewModel.ShowForEditingRequested += ViewModel_ShowForEditingRequested;
         _viewModel.ReturnToWallpaperModeRequested += ViewModel_ReturnToWallpaperModeRequested;
@@ -77,9 +83,18 @@ public sealed class MainWindowController
 
     public async Task OnLoadedAsync()
     {
-        RestoreSavedPositionOrCenter();
-        EnsureWidgetVisible();
-        await ViewModel.InitializeAsync();
+        try
+        {
+            await ViewModel.InitializeAsync();
+            Window.UpdateLayout();
+            ApplyLayoutScaleForScreen(GetCurrentScreen());
+            RestoreSavedPositionOrCenter();
+            EnsureWidgetVisible();
+        }
+        finally
+        {
+            Window.Opacity = _idleOpacity;
+        }
     }
 
     public void OnClosed()
@@ -630,17 +645,26 @@ public sealed class MainWindowController
 
     private double GetUnscaledWidgetWidth()
     {
+        var expectedWidth = GetExpectedUnscaledWidgetWidth();
+
         if (_rootScaleTransform is { ScaleX: > 0 } &&
             Window.ActualWidth > 0)
         {
-            return Window.ActualWidth / _rootScaleTransform.ScaleX;
+            return Math.Max(Window.ActualWidth / _rootScaleTransform.ScaleX, expectedWidth);
         }
 
         if (Window.Width > 0)
         {
-            return Window.Width;
+            return Math.Max(Window.Width, expectedWidth);
         }
 
-        return DefaultWidgetWidth;
+        return expectedWidth;
+    }
+
+    private double GetExpectedUnscaledWidgetWidth()
+    {
+        return _googleCalendarSettings.IsFullCalendarMode
+            ? DefaultFullCalendarWidgetWidth
+            : DefaultCompactWidgetWidth;
     }
 }

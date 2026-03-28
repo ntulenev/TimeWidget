@@ -32,7 +32,7 @@ public sealed class MainWindowControllerTests
         // Arrange
         var exception = RunSta(() =>
         {
-            _ = new MainWindow(null!, new MainWindowController(Options.Create(new WidgetPositioningSettings())));
+            _ = new MainWindow(null!, CreateController());
         });
 
         // Act
@@ -61,7 +61,7 @@ public sealed class MainWindowControllerTests
     public void CtorShouldThrowWhenOptionsIsNull()
     {
         // Arrange
-        var action = () => new MainWindowController(null!);
+        var action = () => new MainWindowController(null!, Options.Create(new GoogleCalendarSettings()));
 
         // Act
         // Assert
@@ -73,7 +73,7 @@ public sealed class MainWindowControllerTests
     public void AttachShouldThrowWhenWindowIsNull()
     {
         // Arrange
-        var controller = new MainWindowController(Options.Create(new WidgetPositioningSettings()));
+        var controller = CreateController();
         using var viewModel = new MainWindowViewModel(CreateDashboardService());
         var rootScaleTransform = new ScaleTransform();
 
@@ -89,7 +89,7 @@ public sealed class MainWindowControllerTests
     public void AttachShouldThrowWhenViewModelIsNull()
     {
         // Arrange
-        var controller = new MainWindowController(Options.Create(new WidgetPositioningSettings()));
+        var controller = CreateController();
         var window = CreateUninitializedMainWindow();
         var rootScaleTransform = new ScaleTransform();
 
@@ -105,7 +105,7 @@ public sealed class MainWindowControllerTests
     public void AttachShouldThrowWhenRootScaleTransformIsNull()
     {
         // Arrange
-        var controller = new MainWindowController(Options.Create(new WidgetPositioningSettings()));
+        var controller = CreateController();
         var window = CreateUninitializedMainWindow();
         using var viewModel = new MainWindowViewModel(CreateDashboardService());
 
@@ -121,7 +121,7 @@ public sealed class MainWindowControllerTests
     public void CenterUpOnScreenShouldThrowWhenScreenIsNull()
     {
         // Arrange
-        var controller = new MainWindowController(Options.Create(new WidgetPositioningSettings()));
+        var controller = CreateController();
 
         // Act
         var action = () => controller.CenterUpOnScreen(null!);
@@ -135,7 +135,7 @@ public sealed class MainWindowControllerTests
     public void OnClosedShouldNotThrowWhenControllerIsNotAttached()
     {
         // Arrange
-        var controller = new MainWindowController(Options.Create(new WidgetPositioningSettings()));
+        var controller = CreateController();
 
         // Act
         var action = () => controller.OnClosed();
@@ -157,7 +157,7 @@ public sealed class MainWindowControllerTests
     public async Task PublicMethodsShouldRejectUseBeforeAttach(string methodName)
     {
         // Arrange
-        var controller = new MainWindowController(Options.Create(new WidgetPositioningSettings()));
+        var controller = CreateController();
 
         // Act
         Func<Task> action = methodName switch
@@ -211,7 +211,7 @@ public sealed class MainWindowControllerTests
     {
         // Arrange
         var window = CreateUninitializedMainWindow();
-        var controller = new MainWindowController(Options.Create(new WidgetPositioningSettings()));
+        var controller = CreateController();
         typeof(MainWindow)
             .GetField("_controller", BindingFlags.Instance | BindingFlags.NonPublic)!
             .SetValue(window, controller);
@@ -237,6 +237,13 @@ public sealed class MainWindowControllerTests
             new CalendarDisplayBuilder(),
             new WeatherDisplayBuilder(),
             Options.Create(new ClockCitiesSettings()),
+            Options.Create(new GoogleCalendarSettings()));
+    }
+
+    private static MainWindowController CreateController()
+    {
+        return new MainWindowController(
+            Options.Create(new WidgetPositioningSettings()),
             Options.Create(new GoogleCalendarSettings()));
     }
 
