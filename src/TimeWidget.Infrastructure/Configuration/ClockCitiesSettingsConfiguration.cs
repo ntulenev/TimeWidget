@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 using Microsoft.Extensions.Options;
 
 using TimeWidget.Domain.Clock;
@@ -14,26 +16,27 @@ public sealed class ClockCitiesSettingsConfiguration : IPostConfigureOptions<Clo
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        options.LeftCities = NormalizeCities(options.LeftCities);
-        options.RightCities = NormalizeCities(options.RightCities);
+        NormalizeCities(options.LeftCities);
+        NormalizeCities(options.RightCities);
     }
 
-    private static CityClockDefinition[] NormalizeCities(CityClockDefinition[]? cities)
+    private static void NormalizeCities(Collection<CityClockDefinition> cities)
     {
-        if (cities is null || cities.Length == 0)
-        {
-            return [];
-        }
+        ArgumentNullException.ThrowIfNull(cities);
 
-        return
-        [
-            .. cities
+        var normalizedCities = cities
             .Select(city => new CityClockDefinition
             {
                 Name = city.Name,
                 TimeZoneId = city.TimeZoneId
             })
             .Where(city => city.IsConfigured)
-        ];
+            .ToArray();
+
+        cities.Clear();
+        foreach (var city in normalizedCities)
+        {
+            cities.Add(city);
+        }
     }
 }

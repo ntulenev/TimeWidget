@@ -10,9 +10,9 @@ namespace TimeWidget.Infrastructure.Location;
 /// </summary>
 public sealed class WindowsLocationService : ILocationService
 {
-    private static readonly double? FallbackLatitude = null;
-    private static readonly double? FallbackLongitude = null;
-    private static readonly string? FallbackLocationLabel = null;
+    private static double? FallbackLatitude => null;
+    private static double? FallbackLongitude => null;
+    private static string? FallbackLocationLabel => null;
 
     /// <inheritdoc />
     public async Task<Coordinates?> TryGetCoordinatesAsync(CancellationToken cancellationToken)

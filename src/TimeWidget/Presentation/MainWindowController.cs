@@ -14,7 +14,6 @@ using TimeWidget.Infrastructure.Windowing;
 using TimeWidget.ViewModels;
 using TimeWidget.Views;
 
-using Forms = System.Windows.Forms;
 using WpfPoint = System.Windows.Point;
 
 namespace TimeWidget.Presentation;
@@ -24,31 +23,6 @@ namespace TimeWidget.Presentation;
 /// </summary>
 public sealed class MainWindowController
 {
-    private const double DefaultLayoutScale = 1.15;
-    private const double DefaultCompactWidgetWidth = 780;
-    private const double DefaultFullCalendarWidgetWidth = 1320;
-    private const double HoverOpacityDelta = 0.06;
-    private const bool PreferDesktopHostedWallpaperMode = false;
-
-    private MainWindow? _window;
-    private MainWindowViewModel? _viewModel;
-    private IntPtr _windowHandle;
-    private IntPtr _foregroundEventHook;
-    private HwndSource? _hwndSource;
-    private WindowNativeMethods.WinEventProc? _foregroundEventProc;
-    private ScaleTransform? _rootScaleTransform;
-    private bool _isDragging;
-    private bool _isDesktopHosted;
-    private bool _isApplyingLayoutScale;
-    private bool _isShellOwnedWallpaper;
-    private int _wallpaperRestoreRequestId;
-    private WindowNativeMethods.NativePoint _dragOffset;
-    private readonly WidgetPositioningSettings _widgetPositioningSettings;
-    private readonly GoogleCalendarSettings _googleCalendarSettings;
-    private readonly double _centerUpVerticalOffsetRatio;
-    private readonly double _idleOpacity;
-    private readonly double _hoverOpacity;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="MainWindowController"/> class.
     /// </summary>
@@ -65,7 +39,7 @@ public sealed class MainWindowController
         _googleCalendarSettings = googleCalendarOptions.Value;
         _centerUpVerticalOffsetRatio = _widgetPositioningSettings.CenterUpVerticalOffsetRatio;
         _idleOpacity = _widgetPositioningSettings.IdleOpacity;
-        _hoverOpacity = Math.Min(_idleOpacity + HoverOpacityDelta, 1d);
+        _hoverOpacity = Math.Min(_idleOpacity + HOVER_OPACITY_DELTA, 1d);
     }
 
     /// <summary>
@@ -134,10 +108,7 @@ public sealed class MainWindowController
             _viewModel.CenterUpWidgetRequested -= ViewModel_CenterUpWidgetRequested;
         }
 
-        if (_window is not null)
-        {
-            _window.SizeChanged -= Window_SizeChanged;
-        }
+        _window?.SizeChanged -= Window_SizeChanged;
     }
 
     /// <summary>
@@ -160,6 +131,12 @@ public sealed class MainWindowController
     /// <param name="e">The mouse event arguments.</param>
     public void HandleDragAreaMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        _ = ViewModel;
+        _ = Window;
+
+        ArgumentNullException.ThrowIfNull(sender);
+        ArgumentNullException.ThrowIfNull(e);
+
         if (ViewModel.IsWallpaperMode ||
             e.ButtonState != MouseButtonState.Pressed ||
             _windowHandle == IntPtr.Zero)
@@ -177,7 +154,7 @@ public sealed class MainWindowController
         }
 
         _isDragging = true;
-        _dragOffset = new WindowNativeMethods.NativePoint
+        _dragOffset = new NativePoint
         {
             X = cursorPosition.X - windowRect.Left,
             Y = cursorPosition.Y - windowRect.Top
@@ -193,6 +170,10 @@ public sealed class MainWindowController
     /// <param name="e">The mouse event arguments.</param>
     public void HandleDragAreaMouseMove(System.Windows.Input.MouseEventArgs e)
     {
+        _ = ViewModel;
+
+        ArgumentNullException.ThrowIfNull(e);
+
         if (ViewModel.IsWallpaperMode || !_isDragging)
         {
             return;
@@ -258,6 +239,10 @@ public sealed class MainWindowController
     /// <param name="e">The key event arguments.</param>
     public void HandleKeyDown(System.Windows.Input.KeyEventArgs e)
     {
+        _ = ViewModel;
+
+        ArgumentNullException.ThrowIfNull(e);
+
         if (!ViewModel.IsWallpaperMode && e.Key == Key.Escape)
         {
             ViewModel.ReturnToWallpaperModeCommand.Execute(null);
@@ -268,7 +253,7 @@ public sealed class MainWindowController
     /// Centers the widget on the specified screen using the configured offset.
     /// </summary>
     /// <param name="screen">The target screen.</param>
-    public void CenterUpOnScreen(Forms.Screen screen)
+    public void CenterUpOnScreen(Screen screen)
     {
         ArgumentNullException.ThrowIfNull(screen);
 
@@ -325,10 +310,7 @@ public sealed class MainWindowController
             DispatcherPriority.Background);
     }
 
-    private void ViewModel_ShowForEditingRequested(object? sender, EventArgs e)
-    {
-        ApplyCurrentWidgetMode(bringToFront: true);
-    }
+    private void ViewModel_ShowForEditingRequested(object? sender, EventArgs e) => ApplyCurrentWidgetMode(bringToFront: true);
 
     private void ViewModel_ReturnToWallpaperModeRequested(object? sender, EventArgs e)
     {
@@ -353,12 +335,9 @@ public sealed class MainWindowController
         ApplyLayoutScaleForScreen(GetCurrentScreen());
     }
 
-    private void CenterUpOnCurrentScreen()
-    {
-        CenterOnScreen(GetCurrentScreen(), _centerUpVerticalOffsetRatio);
-    }
+    private void CenterUpOnCurrentScreen() => CenterOnScreen(GetCurrentScreen(), _centerUpVerticalOffsetRatio);
 
-    private void CenterOnScreen(Forms.Screen screen, double verticalOffsetRatio)
+    private void CenterOnScreen(Screen screen, double verticalOffsetRatio)
     {
         ApplyLayoutScaleForScreen(screen);
 
@@ -396,41 +375,41 @@ public sealed class MainWindowController
     {
         if (ViewModel.IsWallpaperMode && !_isDesktopHosted)
         {
-            if (msg == WindowNativeMethods.WmSize &&
-                wParam.ToInt32() == WindowNativeMethods.SizeMinimized)
+            if (msg == WindowNativeMethods.WMSIZE &&
+                wParam.ToInt32() == WindowNativeMethods.SIZEMINIMIZED)
             {
-                ScheduleWallpaperRestore();
+                ScheduleWallpaperRestoreAsync();
             }
-            else if (msg == WindowNativeMethods.WmShowWindow && wParam == IntPtr.Zero)
+            else if (msg == WindowNativeMethods.WMSHOWWINDOW && wParam == IntPtr.Zero)
             {
-                ScheduleWallpaperRestore();
+                ScheduleWallpaperRestoreAsync();
             }
-            else if (msg == WindowNativeMethods.WmWindowPosChanging && lParam != IntPtr.Zero)
+            else if (msg == WindowNativeMethods.WMWINDOWPOSCHANGING && lParam != IntPtr.Zero)
             {
-                var windowPos = Marshal.PtrToStructure<WindowNativeMethods.WindowPos>(lParam);
-                if ((windowPos.Flags & WindowNativeMethods.SwpHideWindow) != 0)
+                var windowPos = Marshal.PtrToStructure<WindowPos>(lParam);
+                if ((windowPos.Flags & WindowNativeMethods.SWPHIDEWINDOW) != 0)
                 {
-                    ScheduleWallpaperRestore();
+                    ScheduleWallpaperRestoreAsync();
                 }
             }
         }
 
-        if (ViewModel.IsWallpaperMode && msg == WindowNativeMethods.WmMouseActivate)
+        if (ViewModel.IsWallpaperMode && msg == WindowNativeMethods.WMMOUSEACTIVATE)
         {
             handled = true;
-            return new IntPtr(WindowNativeMethods.MaNoActivate);
+            return new IntPtr(WindowNativeMethods.MANOACTIVATE);
         }
 
-        if (ViewModel.IsWallpaperMode && msg == WindowNativeMethods.WmNcHitTest)
+        if (ViewModel.IsWallpaperMode && msg == WindowNativeMethods.WMNCHITTEST)
         {
             handled = true;
-            return new IntPtr(WindowNativeMethods.HtTransparent);
+            return new IntPtr(WindowNativeMethods.HTTRANSPARENT);
         }
 
         return IntPtr.Zero;
     }
 
-    private async void ScheduleWallpaperRestore()
+    private async void ScheduleWallpaperRestoreAsync()
     {
         var requestId = ++_wallpaperRestoreRequestId;
         await Task.Delay(200);
@@ -501,7 +480,7 @@ public sealed class MainWindowController
         {
             Window.Topmost = false;
             WindowNativeMethods.SetNoActivateStyle(_windowHandle, enabled: true);
-            _isDesktopHosted = PreferDesktopHostedWallpaperMode &&
+            _isDesktopHosted = PREFER_DESKTOP_HOSTED_WALLPAPER_MODE &&
                 WindowNativeMethods.TryAttachWindowToDesktopHost(_windowHandle);
             _isShellOwnedWallpaper = !_isDesktopHosted &&
                 WindowNativeMethods.TrySetWindowOwnerToShell(_windowHandle);
@@ -542,7 +521,7 @@ public sealed class MainWindowController
             var savedScreenPosition = GetSavedScreenPosition(savedPlacement);
             if (IsSavedPositionVisible(savedScreenPosition))
             {
-                ApplyLayoutScaleForScreen(Forms.Screen.FromPoint(
+                ApplyLayoutScaleForScreen(Screen.FromPoint(
                     new System.Drawing.Point(savedScreenPosition.X, savedScreenPosition.Y)));
                 MoveWindowToScreenPixels(savedScreenPosition.X, savedScreenPosition.Y);
                 return;
@@ -552,23 +531,23 @@ public sealed class MainWindowController
         CenterUpOnCurrentScreen();
     }
 
-    private Forms.Screen GetCurrentScreen()
+    private Screen GetCurrentScreen()
     {
         if (_windowHandle != IntPtr.Zero)
         {
-            return Forms.Screen.FromHandle(_windowHandle);
+            return Screen.FromHandle(_windowHandle);
         }
 
         var source = PresentationSource.FromVisual(Window);
         var topLeft = source?.CompositionTarget?.TransformToDevice.Transform(new WpfPoint(Window.Left, Window.Top))
             ?? new WpfPoint(Window.Left, Window.Top);
 
-        return Forms.Screen.FromPoint(new System.Drawing.Point(
+        return Screen.FromPoint(new System.Drawing.Point(
             (int)Math.Round(topLeft.X),
             (int)Math.Round(topLeft.Y)));
     }
 
-    private WindowNativeMethods.NativeRect GetCurrentWindowBounds()
+    private NativeRect GetCurrentWindowBounds()
     {
         if (_windowHandle != IntPtr.Zero &&
             WindowNativeMethods.TryGetWindowRectangle(_windowHandle, out var windowRect))
@@ -583,7 +562,7 @@ public sealed class MainWindowController
             new WpfPoint(Window.Left + Window.ActualWidth, Window.Top + Window.ActualHeight))
             ?? new WpfPoint(Window.Left + Window.ActualWidth, Window.Top + Window.ActualHeight);
 
-        return new WindowNativeMethods.NativeRect
+        return new NativeRect
         {
             Left = (int)Math.Round(topLeft.X),
             Top = (int)Math.Round(topLeft.Y),
@@ -592,7 +571,7 @@ public sealed class MainWindowController
         };
     }
 
-    private static bool IsSavedPositionVisible(WindowNativeMethods.NativePoint savedPosition)
+    private static bool IsSavedPositionVisible(NativePoint savedPosition)
     {
         const int visibleWidth = 64;
         const int visibleHeight = 64;
@@ -614,11 +593,11 @@ public sealed class MainWindowController
         ViewModel.SaveScreenPosition(windowRect.Left, windowRect.Top);
     }
 
-    private WindowNativeMethods.NativePoint GetSavedScreenPosition(WidgetPlacement savedPlacement)
+    private NativePoint GetSavedScreenPosition(WidgetPlacement savedPlacement)
     {
         if (savedPlacement.IsPixelUnit)
         {
-            return new WindowNativeMethods.NativePoint
+            return new NativePoint
             {
                 X = (int)Math.Round(savedPlacement.Left),
                 Y = (int)Math.Round(savedPlacement.Top)
@@ -630,7 +609,7 @@ public sealed class MainWindowController
             new WpfPoint(savedPlacement.Left, savedPlacement.Top))
             ?? new WpfPoint(savedPlacement.Left, savedPlacement.Top);
 
-        return new WindowNativeMethods.NativePoint
+        return new NativePoint
         {
             X = (int)Math.Round(screenPoint.X),
             Y = (int)Math.Round(screenPoint.Y)
@@ -659,7 +638,7 @@ public sealed class MainWindowController
         !_widgetPositioningSettings.ScalePercent.HasValue &&
         _widgetPositioningSettings.ScreenPercent.HasValue;
 
-    private void ApplyLayoutScaleForScreen(Forms.Screen screen)
+    private void ApplyLayoutScaleForScreen(Screen screen)
     {
         ArgumentNullException.ThrowIfNull(screen);
 
@@ -669,7 +648,7 @@ public sealed class MainWindowController
         }
 
         var layoutScale = _widgetPositioningSettings.GetLayoutScaleForScreen(
-            DefaultLayoutScale,
+            DEFAULT_LAYOUT_SCALE,
             GetUnscaledWidgetWidth(),
             screen.Bounds.Width);
 
@@ -714,7 +693,32 @@ public sealed class MainWindowController
     private double GetExpectedUnscaledWidgetWidth()
     {
         return _googleCalendarSettings.IsFullCalendarMode
-            ? DefaultFullCalendarWidgetWidth
-            : DefaultCompactWidgetWidth;
+            ? DEFAULT_FULL_CALENDAR_WIDGET_WIDTH
+            : DEFAULT_COMPACT_WIDGET_WIDTH;
     }
+
+    private const double DEFAULT_LAYOUT_SCALE = 1.15;
+    private const double DEFAULT_COMPACT_WIDGET_WIDTH = 780;
+    private const double DEFAULT_FULL_CALENDAR_WIDGET_WIDTH = 1320;
+    private const double HOVER_OPACITY_DELTA = 0.06;
+    private const bool PREFER_DESKTOP_HOSTED_WALLPAPER_MODE = false;
+
+    private MainWindow? _window;
+    private MainWindowViewModel? _viewModel;
+    private IntPtr _windowHandle;
+    private IntPtr _foregroundEventHook;
+    private HwndSource? _hwndSource;
+    private WinEventProc? _foregroundEventProc;
+    private ScaleTransform? _rootScaleTransform;
+    private bool _isDragging;
+    private bool _isDesktopHosted;
+    private bool _isApplyingLayoutScale;
+    private bool _isShellOwnedWallpaper;
+    private int _wallpaperRestoreRequestId;
+    private NativePoint _dragOffset;
+    private readonly WidgetPositioningSettings _widgetPositioningSettings;
+    private readonly GoogleCalendarSettings _googleCalendarSettings;
+    private readonly double _centerUpVerticalOffsetRatio;
+    private readonly double _idleOpacity;
+    private readonly double _hoverOpacity;
 }

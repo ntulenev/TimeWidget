@@ -24,15 +24,6 @@ namespace TimeWidget.Infrastructure.Calendar;
 /// </summary>
 public sealed class GoogleCalendarService : ICalendarService
 {
-    private const string TokenStoreUserId = "timewidget-google-calendar";
-    private const int MinCandidateEventsToFetch = 20;
-    private static readonly string[] Scopes =
-    [
-        CalendarService.Scope.CalendarEventsReadonly
-    ];
-
-    private readonly GoogleCalendarSettings _settings;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="GoogleCalendarService"/> class.
     /// </summary>
@@ -82,7 +73,7 @@ public sealed class GoogleCalendarService : ICalendarService
 
             var maxEvents = _settings.ActiveMaxEvents;
             var request = service.Events.List(_settings.CalendarId);
-            request.MaxResults = Math.Min(50, Math.Max(MinCandidateEventsToFetch, maxEvents * 8));
+            request.MaxResults = Math.Min(50, Math.Max(MIN_CANDIDATE_EVENTS_TO_FETCH, maxEvents * 8));
             request.EventTypes = EventsResource.ListRequest.EventTypesEnum.Default__;
             request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
             request.ShowDeleted = false;
@@ -139,13 +130,13 @@ public sealed class GoogleCalendarService : ICalendarService
             using var stream = File.OpenRead(clientSecretsPath);
             var clientSecrets = GoogleClientSecrets.FromStream(stream).Secrets;
             var flow = CreateAuthorizationFlow(clientSecrets);
-            var token = await flow.LoadTokenAsync(TokenStoreUserId, cancellationToken);
+            var token = await flow.LoadTokenAsync(TOKEN_STORE_USER_ID, cancellationToken);
             if (!string.IsNullOrWhiteSpace(token?.RefreshToken))
             {
-                await flow.RevokeTokenAsync(TokenStoreUserId, token.RefreshToken, cancellationToken);
+                await flow.RevokeTokenAsync(TOKEN_STORE_USER_ID, token.RefreshToken, cancellationToken);
             }
 
-            await flow.DeleteTokenAsync(TokenStoreUserId, cancellationToken);
+            await flow.DeleteTokenAsync(TOKEN_STORE_USER_ID, cancellationToken);
         }
         catch
         {
@@ -159,7 +150,7 @@ public sealed class GoogleCalendarService : ICalendarService
         {
             ClientSecrets = clientSecrets,
             DataStore = new FileDataStore(GetTokenStoreDirectory(), true),
-            Scopes = Scopes,
+            Scopes = _scopes,
             LoginHint = string.IsNullOrWhiteSpace(_settings.LoginHint) ? null : _settings.LoginHint,
             Prompt = _settings.ForceAccountSelection ? "select_account" : null
         };
@@ -175,13 +166,13 @@ public sealed class GoogleCalendarService : ICalendarService
         if (interactionMode == CalendarInteractionMode.Interactive)
         {
             var authApp = new AuthorizationCodeInstalledApp(flow, new LocalServerCodeReceiver());
-            return await authApp.AuthorizeAsync(TokenStoreUserId, cancellationToken);
+            return await authApp.AuthorizeAsync(TOKEN_STORE_USER_ID, cancellationToken);
         }
 
-        var token = await flow.LoadTokenAsync(TokenStoreUserId, cancellationToken);
+        var token = await flow.LoadTokenAsync(TOKEN_STORE_USER_ID, cancellationToken);
         return token is null
             ? null
-            : new UserCredential(flow, TokenStoreUserId, token);
+            : new UserCredential(flow, TOKEN_STORE_USER_ID, token);
     }
 
     private string GetTokenStoreDirectory()
@@ -297,4 +288,13 @@ public sealed class GoogleCalendarService : ICalendarService
         var localDateTime = parsedDate.ToDateTime(TimeOnly.MinValue);
         return new DateTimeOffset(localDateTime, TimeZoneInfo.Local.GetUtcOffset(localDateTime));
     }
+
+    private const string TOKEN_STORE_USER_ID = "timewidget-google-calendar";
+    private const int MIN_CANDIDATE_EVENTS_TO_FETCH = 20;
+    private static readonly string[] _scopes =
+    [
+        CalendarService.Scope.CalendarEventsReadonly
+    ];
+
+    private readonly GoogleCalendarSettings _settings;
 }

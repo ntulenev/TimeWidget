@@ -29,11 +29,11 @@ public sealed class ClockDisplayBuilderTests
         var settings = new ClockCitiesSettings
         {
             LeftCities =
-            [
+            {
                 localCity,
                 new CityClockDefinition { Name = " ", TimeZoneId = TimeZoneInfo.Utc.Id }
-            ],
-            RightCities = [utcCity]
+            },
+            RightCities = { utcCity }
         };
 
         // Act
@@ -58,8 +58,7 @@ public sealed class ClockDisplayBuilderTests
         var builder = new ClockDisplayBuilder();
         var settings = new ClockCitiesSettings
         {
-            LeftCities = [new CityClockDefinition { Name = "Paris", TimeZoneId = " " }],
-            RightCities = []
+            LeftCities = { new CityClockDefinition { Name = "Paris", TimeZoneId = " " } }
         };
 
         // Act

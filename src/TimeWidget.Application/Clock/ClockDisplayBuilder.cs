@@ -9,9 +9,6 @@ namespace TimeWidget.Application.Clock;
 /// </summary>
 public sealed class ClockDisplayBuilder
 {
-    private readonly CultureInfo _dateCulture = CultureInfo.GetCultureInfo("en-US");
-    private readonly bool _use24HourClock = true;
-
     /// <summary>
     /// Builds the clock display state for the specified moment.
     /// </summary>
@@ -43,4 +40,7 @@ public sealed class ClockDisplayBuilder
                     city.FormatTime(now, currentCulture, _use24HourClock)))
             ]);
     }
+
+    private readonly CultureInfo _dateCulture = CultureInfo.GetCultureInfo("en-US");
+    private readonly bool _use24HourClock = true;
 }

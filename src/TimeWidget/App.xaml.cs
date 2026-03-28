@@ -20,12 +20,11 @@ namespace TimeWidget;
 /// </summary>
 public partial class App : System.Windows.Application
 {
-    private Forms.NotifyIcon? _notifyIcon;
-    private IHost? _host;
-
     /// <inheritdoc />
     protected override void OnStartup(StartupEventArgs e)
     {
+        ArgumentNullException.ThrowIfNull(e);
+
         base.OnStartup(e);
 
         _host = CreateHost();
@@ -41,6 +40,8 @@ public partial class App : System.Windows.Application
     /// <inheritdoc />
     protected override void OnExit(ExitEventArgs e)
     {
+        ArgumentNullException.ThrowIfNull(e);
+
         if (_notifyIcon is not null)
         {
             _notifyIcon.Visible = false;
@@ -177,4 +178,7 @@ public partial class App : System.Windows.Application
         var digits = new string([.. screen.DeviceName.Where(char.IsDigit)]);
         return int.TryParse(digits, out var index) ? index : -1;
     }
+
+    private Forms.NotifyIcon? _notifyIcon;
+    private IHost? _host;
 }

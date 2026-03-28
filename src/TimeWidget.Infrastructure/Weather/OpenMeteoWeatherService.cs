@@ -13,15 +13,6 @@ namespace TimeWidget.Infrastructure.Weather;
 /// </summary>
 public sealed class OpenMeteoWeatherService(HttpClient httpClient) : IWeatherService
 {
-    private static readonly string TemperatureUnit =
-        RegionInfo.CurrentRegion.TwoLetterISORegionName.Equals(
-            "US",
-            StringComparison.OrdinalIgnoreCase)
-            ? "fahrenheit"
-            : "celsius";
-
-    private readonly HttpClient _httpClient = httpClient;
-
     /// <inheritdoc />
     public async Task<WeatherSnapshot> GetCurrentWeatherAsync(
         Coordinates coordinates,
@@ -30,7 +21,7 @@ public sealed class OpenMeteoWeatherService(HttpClient httpClient) : IWeatherSer
         ArgumentNullException.ThrowIfNull(coordinates);
 
         var requestPath = FormattableString.Invariant(
-            $"v1/forecast?latitude={coordinates.Latitude}&longitude={coordinates.Longitude}&current=temperature_2m,weather_code,is_day&temperature_unit={TemperatureUnit}&timezone=auto");
+            $"v1/forecast?latitude={coordinates.Latitude}&longitude={coordinates.Longitude}&current=temperature_2m,weather_code,is_day&temperature_unit={_temperatureUnit}&timezone=auto");
         var requestUri = new Uri(requestPath, UriKind.Relative);
 
         using var response = await _httpClient.GetAsync(requestUri, cancellationToken);
@@ -108,5 +99,14 @@ public sealed class OpenMeteoWeatherService(HttpClient httpClient) : IWeatherSer
         [JsonPropertyName("is_day")]
         public int IsDay { get; init; }
     }
+
+    private static readonly string _temperatureUnit =
+        RegionInfo.CurrentRegion.TwoLetterISORegionName.Equals(
+            "US",
+            StringComparison.OrdinalIgnoreCase)
+            ? "fahrenheit"
+            : "celsius";
+
+    private readonly HttpClient _httpClient = httpClient;
 }
 

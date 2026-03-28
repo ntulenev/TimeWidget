@@ -37,11 +37,10 @@ public sealed class ClockCitiesSettingsConfigurationTests
         var options = new ClockCitiesSettings
         {
             LeftCities =
-            [
+            {
                 originalCity,
                 new CityClockDefinition { Name = string.Empty, TimeZoneId = TimeZoneInfo.Utc.Id }
-            ],
-            RightCities = []
+            }
         };
 
         // Act

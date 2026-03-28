@@ -7,77 +7,59 @@ namespace TimeWidget.Infrastructure.Windowing;
 /// </summary>
 public static class WindowNativeMethods
 {
-    private const int GwlStyle = -16;
-    private const int GwlExStyle = -20;
-    private const int GwlHwndParent = -8;
-
-    private static readonly IntPtr HwndBottom = new(1);
-    private static readonly IntPtr HwndNotTopMost = new(-2);
-    private static readonly IntPtr HwndTopMost = new(-1);
-
     /// <summary>Window message sent when a window is shown or hidden.</summary>
-    public const int WmShowWindow = 0x0018;
+    public const int WMSHOWWINDOW = 0x0018;
 
     /// <summary>Window message sent when the window size changes.</summary>
-    public const int WmSize = 0x0005;
+    public const int WMSIZE = 0x0005;
 
     /// <summary>Window message sent before a window is activated by mouse input.</summary>
-    public const int WmMouseActivate = 0x0021;
+    public const int WMMOUSEACTIVATE = 0x0021;
 
     /// <summary>Window message used to determine the hit-test result for a point.</summary>
-    public const int WmNcHitTest = 0x0084;
+    public const int WMNCHITTEST = 0x0084;
 
     /// <summary>Window message sent before a window position change is applied.</summary>
-    public const int WmWindowPosChanging = 0x0046;
+    public const int WMWINDOWPOSCHANGING = 0x0046;
 
     /// <summary>WinEvent identifier raised when the foreground window changes.</summary>
-    public const uint EventSystemForeground = 0x0003;
+    public const uint EVENTSYSTEMFOREGROUND = 0x0003;
 
     /// <summary>Hit-test code that makes a window transparent to mouse input.</summary>
-    public const int HtTransparent = -1;
+    public const int HTTRANSPARENT = -1;
 
     /// <summary>Mouse-activate result that keeps the window from activating.</summary>
-    public const int MaNoActivate = 3;
+    public const int MANOACTIVATE = 3;
 
     /// <summary>Window-size code for the minimized state.</summary>
-    public const int SizeMinimized = 1;
+    public const int SIZEMINIMIZED = 1;
 
     /// <summary>ShowWindow command that displays a window normally.</summary>
-    public const int SwShow = 5;
+    public const int SWSHOW = 5;
 
     /// <summary>ShowWindow command that shows a window without activating it.</summary>
-    public const int SwShownoActivate = 4;
+    public const int SWSHOWNOACTIVATE = 4;
 
     /// <summary>SetWindowPos flag that preserves the current size.</summary>
-    public const uint SwpNoSize = 0x0001;
+    public const uint SWPNOSIZE = 0x0001;
 
     /// <summary>SetWindowPos flag that preserves the current position.</summary>
-    public const uint SwpNoMove = 0x0002;
+    public const uint SWPNOMOVE = 0x0002;
 
     /// <summary>SetWindowPos flag that preserves the current Z order.</summary>
-    public const uint SwpNoZOrder = 0x0004;
+    public const uint SWPNOZORDER = 0x0004;
 
     /// <summary>SetWindowPos flag that prevents window activation.</summary>
-    public const uint SwpNoActivate = 0x0010;
+    public const uint SWPNOACTIVATE = 0x0010;
 
     /// <summary>SetWindowPos flag that reapplies non-client frame styles.</summary>
-    public const uint SwpFrameChanged = 0x0020;
+    public const uint SWPFRAMECHANGED = 0x0020;
 
     /// <summary>SetWindowPos flag that shows the window.</summary>
-    public const uint SwpShowWindow = 0x0040;
+    public const uint SWPSHOWWINDOW = 0x0040;
 
     /// <summary>SetWindowPos flag that hides the window.</summary>
-    public const uint SwpHideWindow = 0x0080;
-
-    private const long WsChild = 0x40000000L;
-    private const long WsPopup = unchecked((int)0x80000000);
-    private const long WsExAppWindow = 0x00040000L;
-    private const long WsExNoActivate = 0x08000000L;
-    private const long WsExToolWindow = 0x00000080L;
-    private const uint ProgmanSpawnWorkerMessage = 0x052C;
-    private const uint SendMessageTimeoutNormal = 0x0000;
-    private const uint WineventOutOfContext = 0x0000;
-    private const uint WineventSkipOwnProcess = 0x0002;
+    public const uint SWPHIDEWINDOW = 0x0080;
 
     /// <summary>
     /// Attempts to read the current cursor position in screen coordinates.
@@ -115,7 +97,7 @@ public static class WindowNativeMethods
             y,
             0,
             0,
-            SwpNoSize | SwpNoActivate | SwpNoZOrder);
+            SWPNOSIZE | SWPNOACTIVATE | SWPNOZORDER);
     }
 
     /// <summary>
@@ -124,7 +106,7 @@ public static class WindowNativeMethods
     /// <param name="windowHandle">The target window handle.</param>
     public static void EnsureVisibleWithoutActivation(IntPtr windowHandle)
     {
-        _ = ShowWindow(windowHandle, SwShownoActivate);
+        _ = ShowWindow(windowHandle, SWSHOWNOACTIVATE);
         _ = SetWindowPos(
             windowHandle,
             IntPtr.Zero,
@@ -132,7 +114,7 @@ public static class WindowNativeMethods
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpNoActivate | SwpShowWindow);
+            SWPNOMOVE | SWPNOSIZE | SWPNOACTIVATE | SWPSHOWWINDOW);
     }
 
     /// <summary>
@@ -141,10 +123,10 @@ public static class WindowNativeMethods
     /// <param name="windowHandle">The target window handle.</param>
     public static void ApplyWidgetWindowStyles(IntPtr windowHandle)
     {
-        var exStyle = GetWindowLongPtr(windowHandle, GwlExStyle).ToInt64();
-        exStyle &= ~WsExAppWindow;
-        exStyle |= WsExToolWindow;
-        _ = SetWindowLongPtr(windowHandle, GwlExStyle, new IntPtr(exStyle));
+        var exStyle = GetWindowLongPtr(windowHandle, GWL_EX_STYLE).ToInt64();
+        exStyle &= ~WS_EX_APP_WINDOW;
+        exStyle |= WS_EX_TOOL_WINDOW;
+        _ = SetWindowLongPtr(windowHandle, GWL_EX_STYLE, new IntPtr(exStyle));
     }
 
     /// <summary>
@@ -154,12 +136,12 @@ public static class WindowNativeMethods
     /// <param name="enabled">A value indicating whether the style should be enabled.</param>
     public static void SetNoActivateStyle(IntPtr windowHandle, bool enabled)
     {
-        var exStyle = GetWindowLongPtr(windowHandle, GwlExStyle).ToInt64();
+        var exStyle = GetWindowLongPtr(windowHandle, GWL_EX_STYLE).ToInt64();
         exStyle = enabled
-            ? exStyle | WsExNoActivate
-            : exStyle & ~WsExNoActivate;
+            ? exStyle | WS_EX_NO_ACTIVATE
+            : exStyle & ~WS_EX_NO_ACTIVATE;
 
-        _ = SetWindowLongPtr(windowHandle, GwlExStyle, new IntPtr(exStyle));
+        _ = SetWindowLongPtr(windowHandle, GWL_EX_STYLE, new IntPtr(exStyle));
         _ = SetWindowPos(
             windowHandle,
             IntPtr.Zero,
@@ -167,7 +149,7 @@ public static class WindowNativeMethods
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpNoZOrder | SwpNoActivate | SwpFrameChanged);
+            SWPNOMOVE | SWPNOSIZE | SWPNOZORDER | SWPNOACTIVATE | SWPFRAMECHANGED);
     }
 
     /// <summary>
@@ -184,7 +166,7 @@ public static class WindowNativeMethods
         }
 
         SetKernelLastError(0);
-        var previousOwner = SetWindowLongPtr(windowHandle, GwlHwndParent, shellWindow);
+        var previousOwner = SetWindowLongPtr(windowHandle, GWL_HWND_PARENT, shellWindow);
         if (previousOwner == IntPtr.Zero && Marshal.GetLastWin32Error() != 0)
         {
             return false;
@@ -197,7 +179,7 @@ public static class WindowNativeMethods
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpNoZOrder | SwpNoActivate | SwpFrameChanged);
+            SWPNOMOVE | SWPNOSIZE | SWPNOZORDER | SWPNOACTIVATE | SWPFRAMECHANGED);
         return true;
     }
 
@@ -208,7 +190,7 @@ public static class WindowNativeMethods
     public static void ClearWindowOwner(IntPtr windowHandle)
     {
         SetKernelLastError(0);
-        _ = SetWindowLongPtr(windowHandle, GwlHwndParent, IntPtr.Zero);
+        _ = SetWindowLongPtr(windowHandle, GWL_HWND_PARENT, IntPtr.Zero);
         _ = SetWindowPos(
             windowHandle,
             IntPtr.Zero,
@@ -216,7 +198,7 @@ public static class WindowNativeMethods
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpNoZOrder | SwpNoActivate | SwpFrameChanged);
+            SWPNOMOVE | SWPNOSIZE | SWPNOZORDER | SWPNOACTIVATE | SWPFRAMECHANGED);
     }
 
     /// <summary>
@@ -226,14 +208,16 @@ public static class WindowNativeMethods
     /// <returns>The hook handle, or <see cref="IntPtr.Zero"/> when registration fails.</returns>
     public static IntPtr SetForegroundEventHook(WinEventProc callback)
     {
+        ArgumentNullException.ThrowIfNull(callback);
+
         return SetWinEventHook(
-            EventSystemForeground,
-            EventSystemForeground,
+            EVENTSYSTEMFOREGROUND,
+            EVENTSYSTEMFOREGROUND,
             IntPtr.Zero,
             callback,
             0,
             0,
-            WineventOutOfContext | WineventSkipOwnProcess);
+            WINEVENT_OUT_OF_CONTEXT | WINEVENT_SKIP_OWN_PROCESS);
     }
 
     /// <summary>
@@ -279,15 +263,15 @@ public static class WindowNativeMethods
     {
         _ = SetParent(windowHandle, IntPtr.Zero);
         SetParentStyle(windowHandle, isChildWindow: false);
-        _ = ShowWindow(windowHandle, SwShow);
+        _ = ShowWindow(windowHandle, SWSHOW);
         _ = SetWindowPos(
             windowHandle,
-            HwndNotTopMost,
+            _hwndNotTopMost,
             0,
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpShowWindow);
+            SWPNOMOVE | SWPNOSIZE | SWPSHOWWINDOW);
     }
 
     /// <summary>
@@ -296,15 +280,15 @@ public static class WindowNativeMethods
     /// <param name="windowHandle">The widget window handle.</param>
     public static void SendWindowToBackForWallpaper(IntPtr windowHandle)
     {
-        _ = ShowWindow(windowHandle, SwShownoActivate);
+        _ = ShowWindow(windowHandle, SWSHOWNOACTIVATE);
         _ = SetWindowPos(
             windowHandle,
-            HwndBottom,
+            _hwndBottom,
             0,
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpNoActivate | SwpShowWindow);
+            SWPNOMOVE | SWPNOSIZE | SWPNOACTIVATE | SWPSHOWWINDOW);
     }
 
     /// <summary>
@@ -313,34 +297,34 @@ public static class WindowNativeMethods
     /// <param name="windowHandle">The widget window handle.</param>
     public static void BringToFrontForEditing(IntPtr windowHandle)
     {
-        _ = ShowWindow(windowHandle, SwShow);
+        _ = ShowWindow(windowHandle, SWSHOW);
         _ = SetWindowPos(
             windowHandle,
-            HwndTopMost,
+            _hwndTopMost,
             0,
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpShowWindow);
+            SWPNOMOVE | SWPNOSIZE | SWPSHOWWINDOW);
         _ = SetForegroundWindow(windowHandle);
     }
 
     private static void SetParentStyle(IntPtr windowHandle, bool isChildWindow)
     {
-        var style = GetWindowLongPtr(windowHandle, GwlStyle).ToInt64();
+        var style = GetWindowLongPtr(windowHandle, GWL_STYLE).ToInt64();
 
         if (isChildWindow)
         {
-            style |= WsChild;
-            style &= ~WsPopup;
+            style |= WS_CHILD;
+            style &= ~WS_POPUP;
         }
         else
         {
-            style &= ~WsChild;
-            style |= WsPopup;
+            style &= ~WS_CHILD;
+            style |= WS_POPUP;
         }
 
-        _ = SetWindowLongPtr(windowHandle, GwlStyle, new IntPtr(style));
+        _ = SetWindowLongPtr(windowHandle, GWL_STYLE, new IntPtr(style));
         _ = SetWindowPos(
             windowHandle,
             IntPtr.Zero,
@@ -348,7 +332,7 @@ public static class WindowNativeMethods
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpNoZOrder | SwpNoActivate | SwpFrameChanged);
+            SWPNOMOVE | SWPNOSIZE | SWPNOZORDER | SWPNOACTIVATE | SWPFRAMECHANGED);
     }
 
     private static bool TryAttachWindowToHost(IntPtr windowHandle, IntPtr desktopHost)
@@ -362,15 +346,15 @@ public static class WindowNativeMethods
             return false;
         }
 
-        _ = ShowWindow(windowHandle, SwShownoActivate);
+        _ = ShowWindow(windowHandle, SWSHOWNOACTIVATE);
         _ = SetWindowPos(
             windowHandle,
-            HwndBottom,
+            _hwndBottom,
             0,
             0,
             0,
             0,
-            SwpNoMove | SwpNoSize | SwpNoActivate | SwpShowWindow);
+            SWPNOMOVE | SWPNOSIZE | SWPNOACTIVATE | SWPSHOWWINDOW);
         return true;
     }
 
@@ -381,10 +365,10 @@ public static class WindowNativeMethods
         {
             _ = SendMessageTimeout(
                 progman,
-                ProgmanSpawnWorkerMessage,
+                PROGMAN_SPAWN_WORKER_MESSAGE,
                 IntPtr.Zero,
                 IntPtr.Zero,
-                SendMessageTimeoutNormal,
+                SEND_MESSAGE_TIMEOUT_NORMAL,
                 1000,
                 out _);
         }
@@ -495,82 +479,21 @@ public static class WindowNativeMethods
 
     private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
-    /// <summary>
-    /// Represents a callback invoked for WinEvent notifications.
-    /// </summary>
-    /// <param name="hWinEventHook">The hook handle that raised the event.</param>
-    /// <param name="eventType">The WinEvent identifier.</param>
-    /// <param name="hwnd">The related window handle.</param>
-    /// <param name="idObject">The object identifier.</param>
-    /// <param name="idChild">The child identifier.</param>
-    /// <param name="idEventThread">The thread that generated the event.</param>
-    /// <param name="dwmsEventTime">The event timestamp.</param>
-    public delegate void WinEventProc(
-        IntPtr hWinEventHook,
-        uint eventType,
-        IntPtr hwnd,
-        int idObject,
-        int idChild,
-        uint idEventThread,
-        uint dwmsEventTime);
+    private const int GWL_STYLE = -16;
+    private const int GWL_EX_STYLE = -20;
+    private const int GWL_HWND_PARENT = -8;
 
-    /// <summary>
-    /// Represents a native screen point.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct NativePoint
-    {
-        /// <summary>The horizontal coordinate.</summary>
-        public int X;
+    private static readonly IntPtr _hwndBottom = new(1);
+    private static readonly IntPtr _hwndNotTopMost = new(-2);
+    private static readonly IntPtr _hwndTopMost = new(-1);
 
-        /// <summary>The vertical coordinate.</summary>
-        public int Y;
-    }
-
-    /// <summary>
-    /// Represents a native window rectangle.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct NativeRect
-    {
-        /// <summary>The left coordinate.</summary>
-        public int Left;
-
-        /// <summary>The top coordinate.</summary>
-        public int Top;
-
-        /// <summary>The right coordinate.</summary>
-        public int Right;
-
-        /// <summary>The bottom coordinate.</summary>
-        public int Bottom;
-    }
-
-    /// <summary>
-    /// Represents the native <c>WINDOWPOS</c> structure.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
-    public struct WindowPos
-    {
-        /// <summary>The target window handle.</summary>
-        public IntPtr Hwnd;
-
-        /// <summary>The window inserted after this handle in the Z order.</summary>
-        public IntPtr HwndInsertAfter;
-
-        /// <summary>The target X coordinate.</summary>
-        public int X;
-
-        /// <summary>The target Y coordinate.</summary>
-        public int Y;
-
-        /// <summary>The target width.</summary>
-        public int Cx;
-
-        /// <summary>The target height.</summary>
-        public int Cy;
-
-        /// <summary>The associated positioning flags.</summary>
-        public uint Flags;
-    }
+    private const long WS_CHILD = 0x40000000L;
+    private const long WS_POPUP = unchecked((int)0x80000000);
+    private const long WS_EX_APP_WINDOW = 0x00040000L;
+    private const long WS_EX_NO_ACTIVATE = 0x08000000L;
+    private const long WS_EX_TOOL_WINDOW = 0x00000080L;
+    private const uint PROGMAN_SPAWN_WORKER_MESSAGE = 0x052C;
+    private const uint SEND_MESSAGE_TIMEOUT_NORMAL = 0x0000;
+    private const uint WINEVENT_OUT_OF_CONTEXT = 0x0000;
+    private const uint WINEVENT_SKIP_OWN_PROCESS = 0x0002;
 }

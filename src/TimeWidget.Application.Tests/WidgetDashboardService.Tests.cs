@@ -92,13 +92,13 @@ public sealed class WidgetDashboardServiceTests
             clockCitiesSettings: new ClockCitiesSettings
             {
                 LeftCities =
-                [
+                {
                     new CityClockDefinition
                     {
                         Name = "UTC",
                         TimeZoneId = TimeZoneInfo.Utc.Id
                     }
-                ]
+                }
             },
             googleCalendarSettings: new GoogleCalendarSettings
             {

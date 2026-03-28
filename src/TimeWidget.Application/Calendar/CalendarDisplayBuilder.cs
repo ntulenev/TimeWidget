@@ -10,8 +10,6 @@ namespace TimeWidget.Application.Calendar;
 /// </summary>
 public sealed class CalendarDisplayBuilder
 {
-    private readonly CultureInfo _dateCulture = CultureInfo.GetCultureInfo("en-US");
-
     /// <summary>
     /// Builds the calendar display model for the main widget view.
     /// </summary>
@@ -124,4 +122,6 @@ public sealed class CalendarDisplayBuilder
 
         return eventDate.ToString("ddd, d MMM", _dateCulture);
     }
+
+    private readonly CultureInfo _dateCulture = CultureInfo.GetCultureInfo("en-US");
 }

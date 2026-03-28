@@ -256,13 +256,13 @@ public sealed class MainWindowViewModelTests
             Options.Create(new ClockCitiesSettings
             {
                 LeftCities =
-                [
+                {
                     new CityClockDefinition
                     {
                         Name = "UTC",
                         TimeZoneId = TimeZoneInfo.Utc.Id
                     }
-                ]
+                }
             }),
             Options.Create(new GoogleCalendarSettings()));
     }
@@ -324,8 +324,6 @@ public sealed class MainWindowViewModelTests
 
     private sealed class ChangingWeatherService : IWeatherService
     {
-        private int _callCount;
-
         public Task<WeatherSnapshot> GetCurrentWeatherAsync(
             Coordinates coordinates,
             CancellationToken cancellationToken)
@@ -336,6 +334,8 @@ public sealed class MainWindowViewModelTests
                 : new WeatherSnapshot(18, "Rain", "Hamburg");
             return Task.FromResult(snapshot);
         }
+
+        private int _callCount;
     }
 
     private sealed class TrackingCalendarService : ICalendarService

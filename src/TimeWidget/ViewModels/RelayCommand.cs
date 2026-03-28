@@ -7,9 +7,6 @@ namespace TimeWidget.ViewModels;
 /// </summary>
 public sealed class RelayCommand : ICommand
 {
-    private readonly Action _execute;
-    private readonly Func<bool>? _canExecute;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="RelayCommand"/> class.
     /// </summary>
@@ -48,5 +45,8 @@ public sealed class RelayCommand : ICommand
     {
         CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
+
+    private readonly Action _execute;
+    private readonly Func<bool>? _canExecute;
 }
 

@@ -10,30 +10,20 @@ namespace TimeWidget.Infrastructure.Persistence;
 /// </summary>
 public sealed class JsonWidgetPlacementStore : IWidgetPlacementStore
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true
-    };
-
-    private static readonly string SettingsFilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "TimeWidget",
-        "widget-settings.json");
-
     /// <inheritdoc />
     public void SaveWindowPlacement(WidgetPlacement placement)
     {
         try
         {
-            var settingsDirectory = Path.GetDirectoryName(SettingsFilePath);
+            var settingsDirectory = Path.GetDirectoryName(_settingsFilePath);
             if (!string.IsNullOrWhiteSpace(settingsDirectory))
             {
                 Directory.CreateDirectory(settingsDirectory);
             }
 
-            var payload = JsonSerializer.Serialize(placement, SerializerOptions);
+            var payload = JsonSerializer.Serialize(placement, _serializerOptions);
 
-            File.WriteAllText(SettingsFilePath, payload);
+            File.WriteAllText(_settingsFilePath, payload);
         }
         catch
         {
@@ -46,13 +36,13 @@ public sealed class JsonWidgetPlacementStore : IWidgetPlacementStore
     {
         try
         {
-            if (!File.Exists(SettingsFilePath))
+            if (!File.Exists(_settingsFilePath))
             {
                 placement = default;
                 return false;
             }
 
-            var payload = File.ReadAllText(SettingsFilePath);
+            var payload = File.ReadAllText(_settingsFilePath);
             var settings = JsonSerializer.Deserialize<WidgetPlacement>(payload);
             if (double.IsNaN(settings.Left) || double.IsNaN(settings.Top))
             {
@@ -71,5 +61,15 @@ public sealed class JsonWidgetPlacementStore : IWidgetPlacementStore
             return false;
         }
     }
+
+    private static readonly JsonSerializerOptions _serializerOptions = new()
+    {
+        WriteIndented = true
+    };
+
+    private static readonly string _settingsFilePath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "TimeWidget",
+        "widget-settings.json");
 }
 

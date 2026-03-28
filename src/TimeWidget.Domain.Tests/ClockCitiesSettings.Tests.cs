@@ -14,15 +14,15 @@ public sealed class ClockCitiesSettingsTests
         var settings = new ClockCitiesSettings
         {
             LeftCities =
-            [
+            {
                 new CityClockDefinition { Name = "Berlin", TimeZoneId = TimeZoneInfo.Utc.Id },
                 new CityClockDefinition { Name = " ", TimeZoneId = TimeZoneInfo.Utc.Id }
-            ],
+            },
             RightCities =
-            [
+            {
                 new CityClockDefinition { Name = "UTC", TimeZoneId = TimeZoneInfo.Utc.Id },
                 new CityClockDefinition { Name = "Tokyo", TimeZoneId = string.Empty }
-            ]
+            }
         };
 
         // Act

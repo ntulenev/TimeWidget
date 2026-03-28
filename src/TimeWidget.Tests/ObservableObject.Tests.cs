@@ -43,11 +43,11 @@ public sealed class ObservableObjectTests
 
     private sealed class TestObservableObject : ObservableObject
     {
-        private string _value = string.Empty;
-
         public string Value => _value;
 
         public bool SetValue(string value) => SetProperty(ref _value, value, nameof(Value));
+
+        private string _value = string.Empty;
     }
 }
 

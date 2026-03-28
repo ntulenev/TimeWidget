@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace TimeWidget.Domain.Clock;
 
 /// <summary>
@@ -6,14 +8,14 @@ namespace TimeWidget.Domain.Clock;
 public sealed class ClockCitiesSettings
 {
     /// <summary>
-    /// Gets or sets the city clocks displayed on the left side.
+    /// Gets the city clocks displayed on the left side.
     /// </summary>
-    public CityClockDefinition[] LeftCities { get; set; } = [];
+    public Collection<CityClockDefinition> LeftCities { get; } = [];
 
     /// <summary>
-    /// Gets or sets the city clocks displayed on the right side.
+    /// Gets the city clocks displayed on the right side.
     /// </summary>
-    public CityClockDefinition[] RightCities { get; set; } = [];
+    public Collection<CityClockDefinition> RightCities { get; } = [];
 
     /// <summary>
     /// Gets the configured left-side city clocks.

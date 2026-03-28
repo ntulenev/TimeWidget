@@ -13,8 +13,6 @@ namespace TimeWidget.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private readonly MainWindowController _controller;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="MainWindow"/> class.
     /// </summary>
@@ -34,11 +32,11 @@ public partial class MainWindow : Window
         _controller.Attach(this, viewModel, RootScaleTransform);
 
         SourceInitialized += MainWindow_SourceInitialized;
-        Loaded += MainWindow_Loaded;
+        Loaded += MainWindow_LoadedAsync;
         Closed += MainWindow_Closed;
     }
 
-    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    private async void MainWindow_LoadedAsync(object sender, RoutedEventArgs e)
     {
         await _controller.OnLoadedAsync();
     }
@@ -89,6 +87,10 @@ public partial class MainWindow : Window
     /// <param name="screen">The target screen.</param>
     public void CenterUpOnScreen(Forms.Screen screen)
     {
+        ArgumentNullException.ThrowIfNull(screen);
+
         _controller.CenterUpOnScreen(screen);
     }
+
+    private readonly MainWindowController _controller;
 }

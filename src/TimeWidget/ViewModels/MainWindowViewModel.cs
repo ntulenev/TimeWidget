@@ -15,34 +15,6 @@ namespace TimeWidget.ViewModels;
 /// </summary>
 public sealed class MainWindowViewModel : ObservableObject, IDisposable
 {
-    private static readonly TimeSpan ClockRefreshInterval = TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan WeatherRefreshInterval = TimeSpan.FromMinutes(15);
-    private static readonly TimeSpan WeatherResumeRetryDelay = TimeSpan.FromSeconds(10);
-
-    private readonly WidgetDashboardService _dashboardService;
-    private readonly ReadOnlyObservableCollection<CityClockItemViewModel> _leftCityTimes;
-    private readonly ReadOnlyObservableCollection<CityClockItemViewModel> _rightCityTimes;
-    private readonly ObservableCollection<CityClockItemViewModel> _leftCityTimesSource = [];
-    private readonly ObservableCollection<CityClockItemViewModel> _rightCityTimesSource = [];
-    private readonly ObservableCollection<CalendarEventItemViewModel> _calendarEventsSource = [];
-    private readonly ReadOnlyObservableCollection<CalendarEventItemViewModel> _calendarEvents;
-    private readonly DispatcherTimer _clockTimer;
-    private readonly DispatcherTimer _calendarTimer;
-    private readonly DispatcherTimer _weatherTimer;
-
-    private bool _isWallpaperMode = true;
-    private string _timeText = string.Empty;
-    private string _dateText = string.Empty;
-    private string _calendarStatusText = string.Empty;
-    private string _weatherTemperatureText = string.Empty;
-    private string _weatherConditionText = string.Empty;
-    private string _weatherLocationText = "Locating...";
-    private bool _hasWeatherDetails;
-    private bool _showCompactCalendarSection;
-    private bool _showFullCalendarSection;
-    private bool _showCalendarEvents;
-    private bool _showCalendarStatus;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class.
     /// </summary>
@@ -52,9 +24,9 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(dashboardService);
 
         _dashboardService = dashboardService;
-        _leftCityTimes = new ReadOnlyObservableCollection<CityClockItemViewModel>(_leftCityTimesSource);
-        _rightCityTimes = new ReadOnlyObservableCollection<CityClockItemViewModel>(_rightCityTimesSource);
-        _calendarEvents = new ReadOnlyObservableCollection<CalendarEventItemViewModel>(_calendarEventsSource);
+        LeftCityTimes = new ReadOnlyObservableCollection<CityClockItemViewModel>(_leftCityTimesSource);
+        RightCityTimes = new ReadOnlyObservableCollection<CityClockItemViewModel>(_rightCityTimesSource);
+        CalendarEvents = new ReadOnlyObservableCollection<CalendarEventItemViewModel>(_calendarEventsSource);
 
         ShowForEditingCommand = new RelayCommand(RequestShowForEditing);
         ReturnToWallpaperModeCommand = new RelayCommand(RequestReturnToWallpaperMode);
@@ -62,7 +34,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
 
         _clockTimer = new DispatcherTimer
         {
-            Interval = ClockRefreshInterval
+            Interval = _clockRefreshInterval
         };
         _calendarTimer = new DispatcherTimer
         {
@@ -70,7 +42,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         };
         _weatherTimer = new DispatcherTimer
         {
-            Interval = WeatherRefreshInterval
+            Interval = _weatherRefreshInterval
         };
 
         _clockTimer.Tick += (_, _) => UpdateTime();
@@ -114,17 +86,15 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Gets a value indicating whether the widget is currently in wallpaper mode.
     /// </summary>
-    public bool IsWallpaperMode
-    {
-        get => _isWallpaperMode;
-        private set
+    public bool IsWallpaperMode {
+        get; private set
         {
-            if (SetProperty(ref _isWallpaperMode, value))
+            if (SetProperty(ref field, value))
             {
                 OnPropertyChanged(nameof(EditChromeVisible));
             }
         }
-    }
+    } = true;
 
     /// <summary>
     /// Gets a value indicating whether edit chrome should be visible.
@@ -134,12 +104,12 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Gets the left-side city clocks.
     /// </summary>
-    public ReadOnlyObservableCollection<CityClockItemViewModel> LeftCityTimes => _leftCityTimes;
+    public ReadOnlyObservableCollection<CityClockItemViewModel> LeftCityTimes { get; }
 
     /// <summary>
     /// Gets the right-side city clocks.
     /// </summary>
-    public ReadOnlyObservableCollection<CityClockItemViewModel> RightCityTimes => _rightCityTimes;
+    public ReadOnlyObservableCollection<CityClockItemViewModel> RightCityTimes { get; }
 
     /// <summary>
     /// Gets a value indicating whether the left-side clocks collection has items.
@@ -154,106 +124,62 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Gets the calendar events shown in the widget.
     /// </summary>
-    public ReadOnlyObservableCollection<CalendarEventItemViewModel> CalendarEvents => _calendarEvents;
+    public ReadOnlyObservableCollection<CalendarEventItemViewModel> CalendarEvents { get; }
 
     /// <summary>
     /// Gets the main time text.
     /// </summary>
-    public string TimeText
-    {
-        get => _timeText;
-        private set => SetProperty(ref _timeText, value);
-    }
+    public string TimeText { get; private set => SetProperty(ref field, value); } = string.Empty;
 
     /// <summary>
     /// Gets the formatted date text.
     /// </summary>
-    public string DateText
-    {
-        get => _dateText;
-        private set => SetProperty(ref _dateText, value);
-    }
+    public string DateText { get; private set => SetProperty(ref field, value); } = string.Empty;
 
     /// <summary>
     /// Gets the calendar status text.
     /// </summary>
-    public string CalendarStatusText
-    {
-        get => _calendarStatusText;
-        private set => SetProperty(ref _calendarStatusText, value);
-    }
+    public string CalendarStatusText { get; private set => SetProperty(ref field, value); } = string.Empty;
 
     /// <summary>
     /// Gets the weather temperature text.
     /// </summary>
-    public string WeatherTemperatureText
-    {
-        get => _weatherTemperatureText;
-        private set => SetProperty(ref _weatherTemperatureText, value);
-    }
+    public string WeatherTemperatureText { get; private set => SetProperty(ref field, value); } = string.Empty;
 
     /// <summary>
     /// Gets the weather condition text.
     /// </summary>
-    public string WeatherConditionText
-    {
-        get => _weatherConditionText;
-        private set => SetProperty(ref _weatherConditionText, value);
-    }
+    public string WeatherConditionText { get; private set => SetProperty(ref field, value); } = string.Empty;
 
     /// <summary>
     /// Gets the weather location text.
     /// </summary>
-    public string WeatherLocationText
-    {
-        get => _weatherLocationText;
-        private set => SetProperty(ref _weatherLocationText, value);
-    }
+    public string WeatherLocationText { get; private set => SetProperty(ref field, value); } = "Locating...";
 
     /// <summary>
     /// Gets a value indicating whether weather details are available.
     /// </summary>
-    public bool HasWeatherDetails
-    {
-        get => _hasWeatherDetails;
-        private set => SetProperty(ref _hasWeatherDetails, value);
-    }
+    public bool HasWeatherDetails { get; private set => SetProperty(ref field, value); }
 
     /// <summary>
     /// Gets a value indicating whether the compact calendar section should be shown.
     /// </summary>
-    public bool ShowCompactCalendarSection
-    {
-        get => _showCompactCalendarSection;
-        private set => SetProperty(ref _showCompactCalendarSection, value);
-    }
+    public bool ShowCompactCalendarSection { get; private set => SetProperty(ref field, value); }
 
     /// <summary>
     /// Gets a value indicating whether the full calendar section should be shown.
     /// </summary>
-    public bool ShowFullCalendarSection
-    {
-        get => _showFullCalendarSection;
-        private set => SetProperty(ref _showFullCalendarSection, value);
-    }
+    public bool ShowFullCalendarSection { get; private set => SetProperty(ref field, value); }
 
     /// <summary>
     /// Gets a value indicating whether calendar events should be shown.
     /// </summary>
-    public bool ShowCalendarEvents
-    {
-        get => _showCalendarEvents;
-        private set => SetProperty(ref _showCalendarEvents, value);
-    }
+    public bool ShowCalendarEvents { get; private set => SetProperty(ref field, value); }
 
     /// <summary>
     /// Gets a value indicating whether the calendar status should be shown.
     /// </summary>
-    public bool ShowCalendarStatus
-    {
-        get => _showCalendarStatus;
-        private set => SetProperty(ref _showCalendarStatus, value);
-    }
+    public bool ShowCalendarStatus { get; private set => SetProperty(ref field, value); }
 
     /// <summary>
     /// Initializes the widget data and starts background refresh timers.
@@ -293,7 +219,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         ApplyWeatherState(weatherRefresh.DisplayState);
         if (!weatherRefresh.Succeeded)
         {
-            await Task.Delay(WeatherResumeRetryDelay);
+            await Task.Delay(_weatherResumeRetryDelay);
             await RefreshWeatherCoreAsync();
         }
 
@@ -352,20 +278,14 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
     /// </summary>
     /// <param name="left">The left position in screen pixels.</param>
     /// <param name="top">The top position in screen pixels.</param>
-    public void SaveScreenPosition(int left, int top)
-    {
-        _dashboardService.SavePlacement(new WidgetPlacement(left, top));
-    }
+    public void SaveScreenPosition(int left, int top) => _dashboardService.SavePlacement(new WidgetPlacement(left, top));
 
     /// <summary>
     /// Attempts to load the previously saved window placement.
     /// </summary>
     /// <param name="placement">When this method returns, contains the loaded placement if one exists.</param>
     /// <returns><see langword="true"/> when a placement was loaded; otherwise, <see langword="false"/>.</returns>
-    public bool TryLoadWindowPlacement(out WidgetPlacement placement)
-    {
-        return _dashboardService.TryLoadPlacement(out placement);
-    }
+    public bool TryLoadWindowPlacement(out WidgetPlacement placement) => _dashboardService.TryLoadPlacement(out placement);
 
     /// <summary>
     /// Stops background timers owned by the view model.
@@ -389,15 +309,9 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         ReturnToWallpaperModeRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    private void RequestCenterUpWidget()
-    {
-        CenterUpWidgetRequested?.Invoke(this, EventArgs.Empty);
-    }
+    private void RequestCenterUpWidget() => CenterUpWidgetRequested?.Invoke(this, EventArgs.Empty);
 
-    private void UpdateTime()
-    {
-        ApplyClockState(_dashboardService.GetClockDisplayState());
-    }
+    private void UpdateTime() => ApplyClockState(_dashboardService.GetClockDisplayState());
 
     private async Task RefreshWeatherCoreAsync()
     {
@@ -405,10 +319,7 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
         ApplyWeatherState(weatherRefresh.DisplayState);
     }
 
-    private async Task RefreshCalendarAsync(CalendarInteractionMode interactionMode)
-    {
-        ApplyCalendarState(await _dashboardService.RefreshCalendarAsync(interactionMode, CancellationToken.None));
-    }
+    private async Task RefreshCalendarAsync(CalendarInteractionMode interactionMode) => ApplyCalendarState(await _dashboardService.RefreshCalendarAsync(interactionMode, CancellationToken.None));
 
     private void ApplyClockState(ClockDisplayState state)
     {
@@ -465,4 +376,16 @@ public sealed class MainWindowViewModel : ObservableObject, IDisposable
             target[index].Apply(source[index]);
         }
     }
+
+    private static readonly TimeSpan _clockRefreshInterval = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan _weatherRefreshInterval = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan _weatherResumeRetryDelay = TimeSpan.FromSeconds(10);
+
+    private readonly WidgetDashboardService _dashboardService;
+    private readonly ObservableCollection<CityClockItemViewModel> _leftCityTimesSource = [];
+    private readonly ObservableCollection<CityClockItemViewModel> _rightCityTimesSource = [];
+    private readonly ObservableCollection<CalendarEventItemViewModel> _calendarEventsSource = [];
+    private readonly DispatcherTimer _clockTimer;
+    private readonly DispatcherTimer _calendarTimer;
+    private readonly DispatcherTimer _weatherTimer;
 }

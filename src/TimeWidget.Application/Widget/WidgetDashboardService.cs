@@ -18,23 +18,6 @@ namespace TimeWidget.Application.Widget;
 /// </summary>
 public sealed class WidgetDashboardService
 {
-    private readonly IClockService _clockService;
-    private readonly ICalendarService _calendarService;
-    private readonly ILocationService _locationService;
-    private readonly IWeatherService _weatherService;
-    private readonly IWidgetPlacementStore _placementStore;
-    private readonly ClockDisplayBuilder _clockDisplayBuilder;
-    private readonly CalendarDisplayBuilder _calendarDisplayBuilder;
-    private readonly WeatherDisplayBuilder _weatherDisplayBuilder;
-    private readonly ClockCitiesSettings _clockCitiesSettings;
-    private readonly GoogleCalendarSettings _googleCalendarSettings;
-
-    private Coordinates? _weatherCoordinates;
-    private bool _isRefreshingCalendar;
-    private bool _isRefreshingWeather;
-    private WeatherDisplayState _lastWeatherDisplay = new(string.Empty, string.Empty, "Locating...", false);
-    private CalendarDisplayState _lastCalendarDisplay = new([], string.Empty, false, false, false, false, false);
-
     /// <summary>
     /// Initializes a new instance of the <see cref="WidgetDashboardService"/> class.
     /// </summary>
@@ -223,4 +206,21 @@ public sealed class WidgetDashboardService
         _weatherCoordinates = await _locationService.TryGetCoordinatesAsync(cancellationToken);
         return _weatherCoordinates is not null;
     }
+
+    private readonly IClockService _clockService;
+    private readonly ICalendarService _calendarService;
+    private readonly ILocationService _locationService;
+    private readonly IWeatherService _weatherService;
+    private readonly IWidgetPlacementStore _placementStore;
+    private readonly ClockDisplayBuilder _clockDisplayBuilder;
+    private readonly CalendarDisplayBuilder _calendarDisplayBuilder;
+    private readonly WeatherDisplayBuilder _weatherDisplayBuilder;
+    private readonly ClockCitiesSettings _clockCitiesSettings;
+    private readonly GoogleCalendarSettings _googleCalendarSettings;
+
+    private Coordinates? _weatherCoordinates;
+    private bool _isRefreshingCalendar;
+    private bool _isRefreshingWeather;
+    private WeatherDisplayState _lastWeatherDisplay = new(string.Empty, string.Empty, "Locating...", false);
+    private CalendarDisplayState _lastCalendarDisplay = new([], string.Empty, false, false, false, false, false);
 }

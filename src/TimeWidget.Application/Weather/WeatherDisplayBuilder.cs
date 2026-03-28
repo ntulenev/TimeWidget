@@ -5,9 +5,6 @@ namespace TimeWidget.Application.Weather;
 /// </summary>
 public sealed class WeatherDisplayBuilder
 {
-    private readonly string _locationUnavailableText = "Enable Windows location";
-    private readonly string _weatherUnavailableText = "Weather unavailable";
-
     /// <summary>
     /// Builds the weather display state.
     /// </summary>
@@ -41,4 +38,7 @@ public sealed class WeatherDisplayBuilder
                 false)
         };
     }
+
+    private readonly string _locationUnavailableText = "Enable Windows location";
+    private readonly string _weatherUnavailableText = "Weather unavailable";
 }
