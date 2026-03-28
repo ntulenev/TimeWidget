@@ -22,6 +22,7 @@ namespace TimeWidget.Presentation;
 public sealed class MainWindowController
 {
     private const double DefaultLayoutScale = 1.15;
+    private const double DefaultWidgetWidth = 780;
     private const double HoverOpacityDelta = 0.06;
     private const bool PreferDesktopHostedWallpaperMode = false;
 
@@ -31,25 +32,26 @@ public sealed class MainWindowController
     private IntPtr _foregroundEventHook;
     private HwndSource? _hwndSource;
     private WindowNativeMethods.WinEventProc? _foregroundEventProc;
+    private ScaleTransform? _rootScaleTransform;
     private bool _isDragging;
     private bool _isDesktopHosted;
+    private bool _isApplyingLayoutScale;
     private bool _isShellOwnedWallpaper;
     private int _wallpaperRestoreRequestId;
     private WindowNativeMethods.NativePoint _dragOffset;
+    private readonly WidgetPositioningSettings _widgetPositioningSettings;
     private readonly double _centerUpVerticalOffsetRatio;
     private readonly double _idleOpacity;
     private readonly double _hoverOpacity;
-    private readonly double _layoutScale;
 
     public MainWindowController(IOptions<WidgetPositioningSettings> widgetPositioningOptions)
     {
         ArgumentNullException.ThrowIfNull(widgetPositioningOptions);
 
-        var settings = widgetPositioningOptions.Value;
-        _centerUpVerticalOffsetRatio = settings.GetCenterUpVerticalOffsetRatio();
-        _idleOpacity = settings.GetIdleOpacity();
+        _widgetPositioningSettings = widgetPositioningOptions.Value;
+        _centerUpVerticalOffsetRatio = _widgetPositioningSettings.GetCenterUpVerticalOffsetRatio();
+        _idleOpacity = _widgetPositioningSettings.GetIdleOpacity();
         _hoverOpacity = Math.Min(_idleOpacity + HoverOpacityDelta, 1d);
-        _layoutScale = settings.GetLayoutScale(DefaultLayoutScale);
     }
 
     public void Attach(MainWindow window, MainWindowViewModel viewModel, ScaleTransform rootScaleTransform)
@@ -60,8 +62,8 @@ public sealed class MainWindowController
 
         _window = window;
         _viewModel = viewModel;
-        rootScaleTransform.ScaleX = _layoutScale;
-        rootScaleTransform.ScaleY = _layoutScale;
+        _rootScaleTransform = rootScaleTransform;
+        ApplyLayoutScaleForScreen(GetCurrentScreen());
 
         _window.Topmost = false;
         _window.Opacity = _idleOpacity;
@@ -69,6 +71,7 @@ public sealed class MainWindowController
         _viewModel.ShowForEditingRequested += ViewModel_ShowForEditingRequested;
         _viewModel.ReturnToWallpaperModeRequested += ViewModel_ReturnToWallpaperModeRequested;
         _viewModel.CenterUpWidgetRequested += ViewModel_CenterUpWidgetRequested;
+        _window.SizeChanged += Window_SizeChanged;
         SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
     }
 
@@ -93,6 +96,11 @@ public sealed class MainWindowController
             _viewModel.ShowForEditingRequested -= ViewModel_ShowForEditingRequested;
             _viewModel.ReturnToWallpaperModeRequested -= ViewModel_ReturnToWallpaperModeRequested;
             _viewModel.CenterUpWidgetRequested -= ViewModel_CenterUpWidgetRequested;
+        }
+
+        if (_window is not null)
+        {
+            _window.SizeChanged -= Window_SizeChanged;
         }
     }
 
@@ -167,6 +175,7 @@ public sealed class MainWindowController
         }
 
         StopDragging();
+        ApplyLayoutScaleForScreen(GetCurrentScreen());
         SaveWindowPosition();
     }
 
@@ -269,6 +278,16 @@ public sealed class MainWindowController
         SaveWindowPosition();
     }
 
+    private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!UsesScreenPercentScale || _isApplyingLayoutScale)
+        {
+            return;
+        }
+
+        ApplyLayoutScaleForScreen(GetCurrentScreen());
+    }
+
     private void CenterUpOnCurrentScreen()
     {
         CenterOnScreen(GetCurrentScreen(), _centerUpVerticalOffsetRatio);
@@ -276,6 +295,8 @@ public sealed class MainWindowController
 
     private void CenterOnScreen(Forms.Screen screen, double verticalOffsetRatio)
     {
+        ApplyLayoutScaleForScreen(screen);
+
         var windowBounds = GetCurrentWindowBounds();
         var windowWidth = windowBounds.Right - windowBounds.Left;
         var windowHeight = windowBounds.Bottom - windowBounds.Top;
@@ -456,6 +477,8 @@ public sealed class MainWindowController
             var savedScreenPosition = GetSavedScreenPosition(savedPlacement);
             if (IsSavedPositionVisible(savedScreenPosition))
             {
+                ApplyLayoutScaleForScreen(Forms.Screen.FromPoint(
+                    new System.Drawing.Point(savedScreenPosition.X, savedScreenPosition.Y)));
                 MoveWindowToScreenPixels(savedScreenPosition.X, savedScreenPosition.Y);
                 return;
             }
@@ -565,5 +588,59 @@ public sealed class MainWindowController
         }
 
         WindowNativeMethods.MoveWindow(_windowHandle, left, top);
+    }
+
+    private bool UsesScreenPercentScale =>
+        !_widgetPositioningSettings.ScalePercent.HasValue &&
+        _widgetPositioningSettings.ScreenPercent.HasValue;
+
+    private void ApplyLayoutScaleForScreen(Forms.Screen screen)
+    {
+        ArgumentNullException.ThrowIfNull(screen);
+
+        if (_rootScaleTransform is null)
+        {
+            return;
+        }
+
+        var layoutScale = _widgetPositioningSettings.GetLayoutScaleForScreen(
+            DefaultLayoutScale,
+            GetUnscaledWidgetWidth(),
+            screen.Bounds.Width);
+
+        if (Math.Abs(_rootScaleTransform.ScaleX - layoutScale) < 0.0001 &&
+            Math.Abs(_rootScaleTransform.ScaleY - layoutScale) < 0.0001)
+        {
+            return;
+        }
+
+        _isApplyingLayoutScale = true;
+
+        try
+        {
+            _rootScaleTransform.ScaleX = layoutScale;
+            _rootScaleTransform.ScaleY = layoutScale;
+            Window.UpdateLayout();
+        }
+        finally
+        {
+            _isApplyingLayoutScale = false;
+        }
+    }
+
+    private double GetUnscaledWidgetWidth()
+    {
+        if (_rootScaleTransform is { ScaleX: > 0 } &&
+            Window.ActualWidth > 0)
+        {
+            return Window.ActualWidth / _rootScaleTransform.ScaleX;
+        }
+
+        if (Window.Width > 0)
+        {
+            return Window.Width;
+        }
+
+        return DefaultWidgetWidth;
     }
 }

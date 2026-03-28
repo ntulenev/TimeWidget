@@ -77,12 +77,15 @@ The widget reads startup settings from `src/TimeWidget/appsettings.json`.
 {
   "WidgetPositioning": {
     "CenterUpVerticalOffsetPercent": 10,
-    "Opacity": 75
+    "Opacity": 75,
+    "ScreenPercent": 60
   },
   "GoogleCalendar": {
     "Enabled": true,
     "CalendarId": "primary",
-    "MaxEvents": 4,
+    "Mode": "FullCalendar",
+    "MaxEventsCompact": 3,
+    "MaxEventsFull": 7,
     "RefreshMinutes": 5,
     "ClientSecretsPath": "%LocalAppData%\\TimeWidget\\google-oauth-client.json",
     "TokenStoreDirectory": "%LocalAppData%\\TimeWidget\\GoogleCalendarToken",
@@ -93,6 +96,19 @@ The widget reads startup settings from `src/TimeWidget/appsettings.json`.
 ```
 
 `Opacity` is a percentage from `0` to `100`. The default is `75`.
+
+`WidgetPositioning` supports two widget sizing modes:
+
+- `ScalePercent`: scales the widget from its base layout size. For example, `120` means `120%` of the base size.
+- `ScreenPercent`: sizes the widget relative to the width of the target display. For example, `60` means the widget should occupy about `60%` of the current screen width.
+
+Priority rules:
+
+- If both `ScalePercent` and `ScreenPercent` are configured, `ScalePercent` wins.
+- If only one of them is configured, that mode is used.
+- If neither is configured, the widget falls back to the default scale (`100%`).
+
+`ScreenPercent` is evaluated against the screen the widget is currently placed on. If monitors have different resolutions, the widget will have different absolute pixel sizes on those monitors.
 
 ## Google Calendar Setup
 
