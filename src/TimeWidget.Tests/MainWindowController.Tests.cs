@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Media;
 
 using FluentAssertions;
@@ -16,6 +17,7 @@ using TimeWidget.Domain.Configuration;
 using TimeWidget.Domain.Location;
 using TimeWidget.Domain.Weather;
 using TimeWidget.Domain.Widget;
+using TimeWidget.Infrastructure.Windowing;
 using TimeWidget.Presentation;
 using TimeWidget.Views;
 using TimeWidget.ViewModels;
@@ -222,6 +224,112 @@ public sealed class MainWindowControllerTests
         action.Should().Throw<ArgumentNullException>();
     }
 
+    [Fact(DisplayName = "Window message hook should return no activate for wallpaper mode mouse activate.")]
+    [Trait("Category", "Unit")]
+    public void WindowMessageHookShouldReturnNoActivateForWallpaperModeMouseActivate()
+    {
+        // Arrange
+        var controller = CreateController();
+        using var viewModel = new MainWindowViewModel(CreateDashboardService());
+        SetPrivateField(controller, "_viewModel", viewModel);
+        var handled = false;
+
+        // Act
+        var result = InvokeWindowMessageHook(
+            controller,
+            WindowNativeMethods.WMMOUSEACTIVATE,
+            IntPtr.Zero,
+            IntPtr.Zero,
+            ref handled);
+
+        // Assert
+        handled.Should().BeTrue();
+        result.Should().Be(new IntPtr(WindowNativeMethods.MANOACTIVATE));
+    }
+
+    [Fact(DisplayName = "Window message hook should return transparent for wallpaper mode hit test.")]
+    [Trait("Category", "Unit")]
+    public void WindowMessageHookShouldReturnTransparentForWallpaperModeHitTest()
+    {
+        // Arrange
+        var controller = CreateController();
+        using var viewModel = new MainWindowViewModel(CreateDashboardService());
+        SetPrivateField(controller, "_viewModel", viewModel);
+        var handled = false;
+
+        // Act
+        var result = InvokeWindowMessageHook(
+            controller,
+            WindowNativeMethods.WMNCHITTEST,
+            IntPtr.Zero,
+            IntPtr.Zero,
+            ref handled);
+
+        // Assert
+        handled.Should().BeTrue();
+        result.Should().Be(new IntPtr(WindowNativeMethods.HTTRANSPARENT));
+    }
+
+    [Fact(DisplayName = "Window message hook should ignore wallpaper specific messages when editing mode is active.")]
+    [Trait("Category", "Unit")]
+    public void WindowMessageHookShouldIgnoreWallpaperSpecificMessagesWhenEditingModeIsActive()
+    {
+        // Arrange
+        var controller = CreateController();
+        using var viewModel = new MainWindowViewModel(CreateDashboardService());
+        viewModel.ShowForEditingCommand.Execute(null);
+        SetPrivateField(controller, "_viewModel", viewModel);
+        var handled = false;
+
+        // Act
+        var result = InvokeWindowMessageHook(
+            controller,
+            WindowNativeMethods.WMMOUSEACTIVATE,
+            IntPtr.Zero,
+            IntPtr.Zero,
+            ref handled);
+
+        // Assert
+        handled.Should().BeFalse();
+        result.Should().Be(IntPtr.Zero);
+    }
+
+    [Fact(DisplayName = "Saved position visibility should return true for on-screen point.")]
+    [Trait("Category", "Unit")]
+    public void IsSavedPositionVisibleShouldReturnTrueForOnScreenPoint()
+    {
+        // Arrange
+        var point = new NativePoint
+        {
+            X = (int)SystemParameters.VirtualScreenLeft + 10,
+            Y = (int)SystemParameters.VirtualScreenTop + 10
+        };
+
+        // Act
+        var visible = InvokeIsSavedPositionVisible(point);
+
+        // Assert
+        visible.Should().BeTrue();
+    }
+
+    [Fact(DisplayName = "Saved position visibility should return false for off-screen point.")]
+    [Trait("Category", "Unit")]
+    public void IsSavedPositionVisibleShouldReturnFalseForOffScreenPoint()
+    {
+        // Arrange
+        var point = new NativePoint
+        {
+            X = (int)SystemParameters.VirtualScreenLeft - 5000,
+            Y = (int)SystemParameters.VirtualScreenTop - 5000
+        };
+
+        // Act
+        var visible = InvokeIsSavedPositionVisible(point);
+
+        // Assert
+        visible.Should().BeFalse();
+    }
+
     private static WidgetDashboardService CreateDashboardService()
     {
         var now = new DateTimeOffset(2026, 3, 28, 9, 0, 0, TimeSpan.Zero);
@@ -248,6 +356,35 @@ public sealed class MainWindowControllerTests
 
     private static MainWindow CreateUninitializedMainWindow() =>
         (MainWindow)RuntimeHelpers.GetUninitializedObject(typeof(MainWindow));
+
+    private static IntPtr InvokeWindowMessageHook(
+        MainWindowController controller,
+        int message,
+        IntPtr wParam,
+        IntPtr lParam,
+        ref bool handled)
+    {
+        var parameters = new object[] { IntPtr.Zero, message, wParam, lParam, handled };
+        var result = typeof(MainWindowController)
+            .GetMethod("WindowMessageHook", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(controller, parameters);
+        handled = (bool)parameters[4];
+        return (IntPtr)result!;
+    }
+
+    private static bool InvokeIsSavedPositionVisible(NativePoint point)
+    {
+        return (bool)typeof(MainWindowController)
+            .GetMethod("IsSavedPositionVisible", BindingFlags.Static | BindingFlags.NonPublic)!
+            .Invoke(null, [point])!;
+    }
+
+    private static void SetPrivateField(object instance, string fieldName, object? value)
+    {
+        typeof(MainWindowController)
+            .GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(instance, value);
+    }
 
     private static Exception? RunSta(Action action)
     {

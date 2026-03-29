@@ -10,9 +10,20 @@ namespace TimeWidget.Infrastructure.Location;
 /// </summary>
 public sealed class WindowsLocationService : ILocationService
 {
-    private static double? FallbackLatitude => null;
-    private static double? FallbackLongitude => null;
-    private static string? FallbackLocationLabel => null;
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WindowsLocationService"/> class.
+    /// </summary>
+    public WindowsLocationService()
+        : this(new WindowsLocationApi())
+    {
+    }
+
+    internal WindowsLocationService(IWindowsLocationApi locationApi)
+    {
+        ArgumentNullException.ThrowIfNull(locationApi);
+
+        _locationApi = locationApi;
+    }
 
     /// <inheritdoc />
     public async Task<Coordinates?> TryGetCoordinatesAsync(CancellationToken cancellationToken)
@@ -21,25 +32,18 @@ public sealed class WindowsLocationService : ILocationService
 
         try
         {
-            var accessStatus = await Geolocator.RequestAccessAsync();
+            var accessStatus = await _locationApi.RequestAccessAsync();
             if (accessStatus != GeolocationAccessStatus.Allowed)
             {
                 return GetFallbackCoordinates();
             }
 
-            var geolocator = new Geolocator
-            {
-                DesiredAccuracyInMeters = 5000
-            };
-
-            var position = await geolocator.GetGeopositionAsync(
+            var position = await _locationApi.GetPositionAsync(
                 maximumAge: TimeSpan.FromMinutes(30),
                 timeout: TimeSpan.FromSeconds(10));
 
             cancellationToken.ThrowIfCancellationRequested();
-
-            var point = position.Coordinate.Point.Position;
-            return new Coordinates(point.Latitude, point.Longitude, null);
+            return new Coordinates(position.Latitude, position.Longitude, null);
         }
         catch
         {
@@ -56,5 +60,11 @@ public sealed class WindowsLocationService : ILocationService
                 FallbackLocationLabel)
             : null;
     }
+
+    private static double? FallbackLatitude => null;
+    private static double? FallbackLongitude => null;
+    private static string? FallbackLocationLabel => null;
+
+    private readonly IWindowsLocationApi _locationApi;
 }
 
